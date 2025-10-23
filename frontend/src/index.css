@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400..800;1,400..800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Rethink Sans", sans-serif;
+}
+
+* {
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  font-style: normal;
+}
