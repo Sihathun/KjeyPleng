@@ -166,9 +166,11 @@ export default function HomePage() {
             <span>Enjoy the benefits of discounts and </span>
             advertised listings!
           </p>
-          <button className="bg-gray-800 text-white px-8 py-2 rounded-full hover:bg-gray-700 transition-colors">
-            View Plan
-          </button>
+          <a href="/subscribe">
+            <button className="bg-gray-800 text-white px-8 py-2 rounded-full hover:bg-gray-700 transition-colors" href="./subscribe">
+              View Plan
+            </button>
+          </a>
         </div>
       </div>
     </div>

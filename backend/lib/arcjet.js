@@ -10,14 +10,14 @@ export const aj = arcjet({
     rules: [
         //shield protects your app from common attacks sql injections, xss, csrf
         shield({mode:"LIVE"}),
-        detectBot({
+/*         detectBot({
             mode:"LIVE",
             // block all bots except search engines
             allow:[
                 "CATEGORY:SEARCH_ENGINE"
                 // https://arcjet.com/bot-list
             ]
-        }),
+        }), */
         // rate limiting
         tokenBucket({
             mode:"LIVE",

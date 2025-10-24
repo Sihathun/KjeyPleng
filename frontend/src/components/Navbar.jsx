@@ -5,13 +5,14 @@ export default function Navbar() {
     <nav className="w-full border-b border-black/50">
       <div className="max-w-[1440px] mx-auto px-8 py-4 flex items-center gap-8">
         {/* Logo */}
-        <div className="flex items-center">
-          <h1 className="bg-linear-to-r from-blue-500 to-black bg-clip-text text-transparent">
-            <span>kjey</span>
-            <span className="font-bold">Pleng</span>
-          </h1>
-        </div>
-
+        <a href="/">
+          <div className="flex items-center">
+            <h1 className="bg-linear-to-r from-blue-500 to-black bg-clip-text text-transparent">
+              <span>kjey</span>
+              <span className="font-bold">Pleng</span>
+            </h1>
+          </div>
+        </a>
         {/* Navigation Links */}
         <div className="flex items-center gap-8 ml-auto">
           <a href="#" className="text-black hover:opacity-75 transition-opacity">
