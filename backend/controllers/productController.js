@@ -5,7 +5,7 @@ import {sql} from "../config/db.js";
 export const getProducts = async (req, res) => {
     try {
         const products = await sql`
-            SELECT * FROM products
+            SELECT * FROM instruments
             ORDER BY created_at DESC
         `;
         
@@ -17,16 +17,16 @@ export const getProducts = async (req, res) => {
     }
 };
 export const createProduct = async (req, res) => {
-    const {name, price, image} = req.body;
+    const { name, price, image, description, condition, location, availability } = req.body;
 
-    if (!name || !price || !image ) {
+    if (!name || !price || !image || !description || !condition || !location || !availability ) {
         return res.status(400).json({success: false, message: "All fields are required"})
     }
 
     try {
         const newProduct = await sql`
-            INSERT INTO products (name, price, image)
-            VALUES (${name}, ${price}, ${image})
+            INSERT INTO instruments (name, price, image, description, condition, location, availability)
+            VALUES (${name}, ${price}, ${image}, ${description}, ${condition}, ${location}, ${availability})
             RETURNING *
         `;
 
@@ -44,7 +44,7 @@ export const getProduct = async (req, res) => {
 
     try {
         const product = await sql`
-            SELECT * FROM products WHERE id=${id}
+            SELECT * FROM instruments WHERE id=${id}
         `;
 
         res.status(200).json({ success: true, data: product[0]});
@@ -57,12 +57,12 @@ export const getProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
     const { id } = req.params;
-    const { name, price, image } = req.body;
+    const { name, price, image, description, condition, location, availability } = req.body;
 
     try {
         const updatedProduct = await sql`
-            UPDATE products
-            SET name=${name}, price=${price}, image=${image}
+            UPDATE instruments
+            SET name=${name}, price=${price}, image=${image}, description=${description}, condition=${condition}, location=${location}, availability=${availability}
             WHERE id=${id}
             RETURNING *
 
@@ -89,7 +89,7 @@ export const deleteProduct = async (req, res) => {
 
     try {
         const deletedProduct = await sql`
-            DELETE FROM products WHERE id=${id}
+            DELETE FROM instruments WHERE id=${id}
             RETURNING *
         `;
 
