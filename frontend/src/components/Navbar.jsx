@@ -15,7 +15,7 @@ export default function Navbar() {
         </a>
         {/* Navigation Links */}
         <div className="flex items-center gap-8 ml-auto">
-          <a href="#" className="text-black hover:opacity-75 transition-opacity">
+          <a href="/" className="text-black hover:opacity-75 transition-opacity">
             Home
           </a>
           <a href="#" className="text-black hover:opacity-75 transition-opacity">
