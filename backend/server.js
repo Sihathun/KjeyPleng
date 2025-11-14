@@ -5,6 +5,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import productRoutes from "./routes/productRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 import {sql} from "./config/db.js";
 import {aj} from "./lib/arcjet.js";
 
@@ -58,9 +59,10 @@ app.use(async (req, res, next) => {
     }
 })
 
-
+app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 
+// initializing database
 async function initDB() {
     try {
         await sql`
@@ -76,6 +78,24 @@ async function initDB() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `;
+
+        await sql`
+            CREATE TABLE IF NOT EXISTS userSchema (
+                id SERIAL PRIMARY KEY,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                lastLogin TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                isVerified BOOLEAN NOT NULL DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                resetPasswordToken VARCHAR(255),
+                resetPasswordExpiresAt TIMESTAMP,
+                verificationToken VARCHAR(255),
+                verificationTokenExpiresAt TIMESTAMP
+            )            
+        `;
+
         console.log("Database initialized successfully")
     } catch (error) {
         console.log("Error initializing DB", error);
@@ -84,6 +104,8 @@ async function initDB() {
 
 }
 
+
+// this basically initialize the database first then host the server
 initDB().then(() => {
     app.listen(PORT, () => {
         console.log(`Server running at http://localhost:${PORT}`);

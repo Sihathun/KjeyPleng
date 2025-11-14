@@ -16,6 +16,7 @@ export const getProducts = async (req, res) => {
         res.status(500).json({success: false, message: "Internal server error"})
     }
 };
+
 export const createProduct = async (req, res) => {
     const { name, price, image, description, condition, location, availability } = req.body;
 
@@ -84,6 +85,7 @@ export const updateProduct = async (req, res) => {
     }
 
 };
+
 export const deleteProduct = async (req, res) => {
     const { id } = req.params;
 
@@ -109,5 +111,4 @@ export const deleteProduct = async (req, res) => {
         res.status(500).json({sucess: false, message: "Internal server error"})        
     }
 };
-
 
