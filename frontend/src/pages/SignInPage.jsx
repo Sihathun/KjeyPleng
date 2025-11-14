@@ -3,7 +3,7 @@ import googleImg from "/images/googleLogo.png";
 
 export default function SignInPage() {
   return (
-    <div className="bg-white min-h-screen flex items-center justify-center px-8 py-12">
+    <div className="bg-white min-h-full flex items-center justify-center px-8 py-12">
       <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8">
         {/* Title */}
         <h1 className="text-center mb-3">
