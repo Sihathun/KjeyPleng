@@ -371,32 +371,34 @@ export default function SearchPage() {
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="overflow-hidden transition-shadow bg-white border-2 border-gray-200 rounded-2xl hover:shadow-xl"
-                >
-                  <div className="relative h-64 bg-gray-100">
-                    <img
-                      src={`https://source.unsplash.com/featured/400x400/?${product.image}`}
-                      alt={product.name}
-                      className="object-cover w-full h-full"
-                    />
+                <a href="/product/test">
+                  <div
+                    key={product.id}
+                    className="overflow-hidden transition-shadow bg-white border-2 border-gray-200 rounded-2xl hover:shadow-xl"
+                  >
+                    <div className="relative h-64 bg-gray-100">
+                      <img
+                        src={`https://source.unsplash.com/featured/400x400/?${product.image}`}
+                        alt={product.name}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <h3 className="min-h-12 line-clamp-2">
+                        {product.name}
+                      </h3>
+                      <p className="text-gray-600">
+                        {product.condition}
+                      </p>
+                      <p className="text-blue-600">
+                        Price: ${product.price.toFixed(2)}
+                      </p>
+                      <button className="w-full py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
+                        Buy It Now
+                      </button>
+                    </div>
                   </div>
-                  <div className="p-4 space-y-3">
-                    <h3 className="min-h-12 line-clamp-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-600">
-                      {product.condition}
-                    </p>
-                    <p className="text-blue-600">
-                      Price: ${product.price.toFixed(2)}
-                    </p>
-                    <button className="w-full py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
-                      Buy It Now
-                    </button>
-                  </div>
-                </div>
+                </a>
               ))}
             </div>
           )}

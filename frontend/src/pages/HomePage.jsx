@@ -129,7 +129,7 @@ export default function HomePage() {
           <h2>Popular Deals</h2>
           <div className="flex items-center gap-2">
             <span className="text-gray-600">Advertised Listings</span>
-            <a href="#" className="text-blue-500 hover:text-blue-600 flex items-center gap-1">
+            <a href="/search" className="text-blue-500 hover:text-blue-600 flex items-center gap-1">
               Browse All
               <ChevronRight className="w-4 h-4" />
             </a>

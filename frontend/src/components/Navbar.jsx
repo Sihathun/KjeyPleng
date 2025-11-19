@@ -18,13 +18,13 @@ export default function Navbar() {
           <a href="/" className="text-black hover:opacity-75 transition-opacity">
             Home
           </a>
-          <a href="#" className="text-black hover:opacity-75 transition-opacity">
+          <a href="/search" className="text-black hover:opacity-75 transition-opacity">
             Products
           </a>
           <a href="#" className="text-black hover:opacity-75 transition-opacity">
             Vendor
           </a>
-          <a href="#" className="text-black hover:opacity-75 transition-opacity">
+          <a href="/dashboard" className="text-black hover:opacity-75 transition-opacity">
             Dashboard
           </a>
         </div>

@@ -6,8 +6,15 @@ import SubscriptionPage from "./pages/SubscriptionPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import SearchPage from "./pages/SearchPage";
+import ProductPage from "./pages/ProductPage";
+import VendorDashboard from "./pages/Dashboard/VendorDashboard";
+
 
 import { Routes, Route } from "react-router-dom";
+
+
+
+
 
 
 
@@ -24,6 +31,9 @@ function App() {
         <Route path="/login" element={<  SignInPage />}/>
         <Route path="/signup" element={<  SignUpPage />}/>
         <Route path="/search" element={<  SearchPage />}/>
+        <Route path="/product/test" element={<  ProductPage />}/>
+        <Route path="/dashboard/*" element={<  VendorDashboard />}/>
+
       </Routes>
 
       <Footer />
