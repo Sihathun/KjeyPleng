@@ -2,6 +2,8 @@ import VendorSidebar from "../../components/VendorSidebar";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import SalesDashboardPage from "./pages/SalesDashboardPage";
 import ListDashboardPage from "./pages/ListDashboardPage";
+import ManageProductPage from "./pages/ManageDashboardPage";
+import OrdersDashboardPage from "./pages/OrdersDashboardPage";
 
 function VendorDashboard() {
   const navigate = useNavigate();
@@ -31,6 +33,8 @@ function VendorDashboard() {
           <Route index element={<Navigate to="sales" replace />} />
           <Route path="sales" element={<SalesDashboardPage />}/>
           <Route path="list-product" element={<ListDashboardPage/>}/>
+          <Route path="manage-product" element={<ManageProductPage/>}/>
+          <Route path="orders" element={<OrdersDashboardPage/>}/>
           {/* Add more routes here as needed */}
         </Routes>
       </div>
