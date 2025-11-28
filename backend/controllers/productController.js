@@ -1,4 +1,5 @@
 import { sql } from "../config/db.js";
+import { uploadImage, uploadMultipleImages, deleteImage } from "../utils/uploadImage.js";
 
 // Get all products (public - for marketplace browsing)
 export const getProducts = async (req, res) => {
@@ -89,7 +90,6 @@ export const createProduct = async (req, res) => {
         brand,
         image,
         image_url, // Alternative field name
-        images,
         condition,
         location,
         listing_type,
@@ -97,9 +97,6 @@ export const createProduct = async (req, res) => {
         rental_price,
         rental_period
     } = req.body;
-
-    // Use image or image_url
-    const productImage = image || image_url || null;
 
     // Validation
     if (!name || !description || !category || !condition || !location || !listing_type) {
@@ -118,6 +115,16 @@ export const createProduct = async (req, res) => {
     }
 
     try {
+        let productImage = image || image_url || null;
+        let productImages = [];
+
+        // Handle file uploads if present
+        if (req.files && req.files.length > 0) {
+            const uploadedImages = await uploadMultipleImages(req.files);
+            productImage = uploadedImages[0]?.url || null;
+            productImages = uploadedImages.map(img => img.url);
+        }
+
         const newProduct = await sql`
             INSERT INTO instruments (
                 user_id, name, description, category, brand, image, images, 
@@ -125,7 +132,7 @@ export const createProduct = async (req, res) => {
             )
             VALUES (
                 ${userId}, ${name}, ${description}, ${category}, ${brand || null}, ${productImage}, 
-                ${images || []}, ${condition}, ${location}, ${listing_type}, 
+                ${productImages}, ${condition}, ${location}, ${listing_type}, 
                 ${sale_price || null}, ${rental_price || null}, ${rental_period || null}
             )
             RETURNING *
@@ -286,3 +293,24 @@ export const getCategories = async (req, res) => {
     }
 };
 
+// Upload product images (authenticated - for standalone image upload)
+export const uploadProductImages = async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, message: "No images provided" });
+        }
+
+        const uploadedImages = await uploadMultipleImages(req.files);
+        
+        res.status(200).json({ 
+            success: true, 
+            data: {
+                images: uploadedImages.map(img => img.url),
+                mainImage: uploadedImages[0]?.url || null
+            }
+        });
+    } catch (error) {
+        console.log("Error uploadProductImages", error);
+        res.status(500).json({ success: false, message: "Error uploading images" });
+    }
+};

@@ -7,9 +7,11 @@ import {
     updateProduct,
     getMyListings,
     getUserListings,
-    getCategories
+    getCategories,
+    uploadProductImages
 } from "../controllers/productController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
+import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -19,14 +21,15 @@ router.get("/categories", getCategories);
 
 // Protected routes - must come before /:id to avoid conflicts
 router.get("/my/listings", verifyToken, getMyListings);
-router.post("/", verifyToken, createProduct);
+router.post("/", verifyToken, upload.array('images', 5), createProduct);
+router.post("/upload", verifyToken, upload.array('images', 5), uploadProductImages);
 
 // Public routes with params
 router.get("/user/:userId", getUserListings);
 router.get("/:id", getProduct);
 
 // Protected routes with params
-router.put("/:id", verifyToken, updateProduct);
+router.put("/:id", verifyToken, upload.array('images', 5), updateProduct);
 router.delete("/:id", verifyToken, deleteProduct);
 
 export default router;
