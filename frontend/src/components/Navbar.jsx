@@ -1,29 +1,60 @@
-import { ShoppingCart, Search } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Search, User, LogOut, ChevronDown } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 export default function Navbar() {
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('Logged out successfully');
+      navigate('/');
+    } catch (error) {
+      toast.error('Error logging out');
+    }
+  };
+
   return (
     <nav className="w-full border-b border-black/50">
       <div className="max-w-[1440px] mx-auto px-8 py-4 flex items-center gap-8">
         {/* Logo */}
-        <a href="/">
+        <Link to="/">
           <div className="flex items-center">
             <h1 className="bg-linear-to-r from-blue-500 to-black bg-clip-text text-transparent">
               <span>kjey</span>
               <span className="font-bold">Pleng</span>
             </h1>
           </div>
-        </a>
+        </Link>
         {/* Navigation Links */}
         <div className="flex items-center gap-8 ml-auto">
-          <a href="/" className="text-black hover:opacity-75 transition-opacity">
+          <Link to="/" className="text-black hover:opacity-75 transition-opacity">
             Home
-          </a>
-          <a href="/search" className="text-black hover:opacity-75 transition-opacity">
+          </Link>
+          <Link to="/search" className="text-black hover:opacity-75 transition-opacity">
             Products
-          </a>
-          <a href="/dashboard" className="text-black hover:opacity-75 transition-opacity">
+          </Link>
+          <Link to="/dashboard" className="text-black hover:opacity-75 transition-opacity">
             Dashboard
-          </a>
+          </Link>
         </div>
 
         {/* Search Bar */}
@@ -50,12 +81,56 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Login Button */}
-        <a href="/login">
-          <button className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
-            Login
-          </button>
-        </a>
+        {/* User Section */}
+        {isAuthenticated && user ? (
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">
+                  {user.name?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <span className="text-black font-medium max-w-[120px] truncate">
+                {user.name?.split(' ')[0]}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Menu */}
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                  <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                </div>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Log out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <Link to="/login">
+            <button className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
+              Login
+            </button>
+          </Link>
+        )}
       </div>
     </nav>
   );
