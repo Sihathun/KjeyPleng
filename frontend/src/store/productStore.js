@@ -69,11 +69,38 @@ export const useProductStore = create((set, get) => ({
     }
   },
 
-  // Create a new product listing
-  createProduct: async (productData) => {
+  // Create a new product listing (supports FormData for file uploads)
+  createProduct: async (productData, imageFiles = []) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axios.post(API_URL, productData);
+      let response;
+      
+      if (imageFiles.length > 0) {
+        // Use FormData for file uploads
+        const formData = new FormData();
+        
+        // Append text fields
+        Object.keys(productData).forEach(key => {
+          if (productData[key] !== null && productData[key] !== undefined) {
+            formData.append(key, productData[key]);
+          }
+        });
+        
+        // Append image files
+        imageFiles.forEach(file => {
+          formData.append('images', file);
+        });
+        
+        response = await axios.post(API_URL, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } else {
+        // No files, use regular JSON
+        response = await axios.post(API_URL, productData);
+      }
+      
       set((state) => ({
         myListings: [response.data.data, ...state.myListings],
         isLoading: false,

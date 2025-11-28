@@ -20,7 +20,8 @@ export default function ListProductPage() {
     rental_period: 'day',
     location: '',
   });
-  const [uploadedImages, setUploadedImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]); // Store actual File objects
+  const [imagePreviews, setImagePreviews] = useState([]); // Store preview URLs
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
 
@@ -39,12 +40,21 @@ export default function ListProductPage() {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    const imageUrls = files.map(file => URL.createObjectURL(file));
-    setUploadedImages([...uploadedImages, ...imageUrls]);
+    
+    // Store actual file objects for upload
+    setImageFiles(prev => [...prev, ...files]);
+    
+    // Create preview URLs
+    const previewUrls = files.map(file => URL.createObjectURL(file));
+    setImagePreviews(prev => [...prev, ...previewUrls]);
   };
 
   const removeImage = (index) => {
-    setUploadedImages(uploadedImages.filter((_, i) => i !== index));
+    // Revoke the object URL to free memory
+    URL.revokeObjectURL(imagePreviews[index]);
+    
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
@@ -102,13 +112,15 @@ export default function ListProductPage() {
         rental_price: formData.listing_type !== 'sale' ? parseFloat(formData.rental_price) : null,
         rental_period: formData.listing_type !== 'sale' ? formData.rental_period : null,
         location: formData.location,
-        // Note: Image upload would need a separate file upload service
-        image_url: uploadedImages[0] || null,
       };
       
-      await createProduct(productData);
+      // Pass both product data and image files to createProduct
+      await createProduct(productData, imageFiles);
       setSuccess(true);
       toast.success('Product listed successfully!');
+      
+      // Clean up preview URLs
+      imagePreviews.forEach(url => URL.revokeObjectURL(url));
       
       // Reset form
       setTimeout(() => {
@@ -150,7 +162,7 @@ export default function ListProductPage() {
           <div>
             <label className="block mb-3 font-medium">Product Images</label>
             <div className="flex flex-wrap gap-4">
-              {uploadedImages.map((image, index) => (
+              {imagePreviews.map((image, index) => (
                 <div key={index} className="relative w-32 h-32 overflow-hidden bg-gray-200 border-2 border-gray-300 rounded-2xl">
                   <img src={image} alt={`Upload ${index + 1}`} className="object-cover w-full h-full" />
                   <button
