@@ -111,6 +111,7 @@ export default function HomePage() {
 
       {/* Browse Categories */}
       <section className="py-16 px-8">
+
         <h2 className="text-center mb-12 text-xl">Browse</h2>
         <div className="flex items-center justify-center gap-8 overflow-x-auto pb-4">
           {categories.map((category, index) => (

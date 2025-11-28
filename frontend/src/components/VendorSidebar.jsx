@@ -1,6 +1,10 @@
 import svgPaths from '../imports/svg-wyxof50a7.js';
+import { useAuthStore } from '../store/authStore';
 
-export default function VendorSidebar({ activeTab, username = 'Username', onNavigate }) {
+export default function VendorSidebar({ activeTab, onNavigate }) {
+  const { user } = useAuthStore();
+  const username = user?.name || 'Username';
+
   const menuItems = [
     {
       id: 'dashboard',
