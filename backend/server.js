@@ -70,20 +70,7 @@ app.use("/api/products", productRoutes);
 // initializing database
 async function initDB() {
     try {
-        await sql`
-            CREATE TABLE IF NOT EXISTS instruments (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                image VARCHAR(255) NOT NULL,
-                price DECIMAL(10, 2) NOT NULL,
-                description VARCHAR(255) NOT NULL,
-                condition VARCHAR(255) NOT NULL,
-                location VARCHAR(255) NOT NULL,
-                availability BOOLEAN NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `;
-
+        // User schema
         await sql`
             CREATE TABLE IF NOT EXISTS userSchema (
                 id SERIAL PRIMARY KEY,
@@ -99,6 +86,47 @@ async function initDB() {
                 verificationToken VARCHAR(255),
                 verificationTokenExpiresAt TIMESTAMP
             )            
+        `;
+
+        // Instruments/Products schema - Updated for marketplace with rental support
+        await sql`
+            CREATE TABLE IF NOT EXISTS instruments (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES userSchema(id) ON DELETE CASCADE,
+                name VARCHAR(255) NOT NULL,
+                description TEXT NOT NULL,
+                category VARCHAR(100) NOT NULL,
+                brand VARCHAR(100),
+                image VARCHAR(500) NOT NULL,
+                images TEXT[],
+                condition VARCHAR(50) NOT NULL,
+                location VARCHAR(255) NOT NULL,
+                listing_type VARCHAR(20) NOT NULL DEFAULT 'sale',
+                sale_price DECIMAL(10, 2),
+                rental_price DECIMAL(10, 2),
+                rental_period VARCHAR(50),
+                is_available BOOLEAN NOT NULL DEFAULT TRUE,
+                is_approved BOOLEAN NOT NULL DEFAULT FALSE,
+                views INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+
+        // Rentals table for tracking rental transactions
+        await sql`
+            CREATE TABLE IF NOT EXISTS rentals (
+                id SERIAL PRIMARY KEY,
+                instrument_id INTEGER NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+                renter_id INTEGER NOT NULL REFERENCES userSchema(id) ON DELETE CASCADE,
+                owner_id INTEGER NOT NULL REFERENCES userSchema(id) ON DELETE CASCADE,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                total_price DECIMAL(10, 2) NOT NULL,
+                status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
         `;
 
         console.log("Database initialized successfully")
