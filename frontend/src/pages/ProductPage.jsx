@@ -99,7 +99,7 @@ export default function ProductPage() {
             </div>
 
             {/* Quantity Selector */}
-            <div className="flex items-center gap-4 pb-6">
+            {/* <div className="flex items-center gap-4 pb-6">
               <label htmlFor="quantity" className="text-lg">Quantity:</label>
               <div className="flex items-center border-2 border-gray-300 rounded-lg">
                 <button
@@ -123,7 +123,7 @@ export default function ProductPage() {
                   +
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Add to Cart Button */}
             <button

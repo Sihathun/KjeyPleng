@@ -35,7 +35,7 @@ function VendorDashboard() {
           <Route path="list-product" element={<ListDashboardPage/>}/>
           <Route path="manage-product" element={<ManageProductPage/>}/>
           <Route path="orders" element={<OrdersDashboardPage/>}/>
-          {/* Add more routes here as needed */}
+          
         </Routes>
       </div>
     </div>
