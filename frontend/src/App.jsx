@@ -14,6 +14,7 @@ import VendorDashboard from "./pages/Dashboard/VendorDashboard";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import AccountSettingsPage from "./pages/AccountSettingsPage";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
@@ -91,16 +92,17 @@ function App() {
             </RedirectAuthenticatedUser>
           }
         />
-        <Route
-          path="/reset-password/:token"
-          element={
-            <RedirectAuthenticatedUser>
-              <ResetPasswordPage />
-            </RedirectAuthenticatedUser>
-          }
-        />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/product/test" element={<ProductPage />} />
+        <Route
+          path="/account-settings"
+          element={
+            <ProtectedRoute>
+              <AccountSettingsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard/*"
           element={
