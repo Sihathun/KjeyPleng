@@ -93,3 +93,37 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE = `
 </body>
 </html>
 `;
+
+export const WELCOME_EMAIL_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to kjeyPleng</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(to right, #3B82F6, #1E40AF); padding: 20px; text-align: center;">
+    <h1 style="color: white; margin: 0;">Welcome to kjeyPleng! 🎵</h1>
+  </div>
+  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <p>Hello {userName},</p>
+    <p>Welcome to <strong>kjeyPleng</strong>! We're thrilled to have you join our community of music enthusiasts.</p>
+    <p>Your account has been successfully verified and you're all set to explore:</p>
+    <ul>
+      <li>🎸 Browse and discover musical instruments</li>
+      <li>🛒 Shop from trusted vendors</li>
+      <li>💼 Start your own instrument shop</li>
+    </ul>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="http://localhost:5173" style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Start Exploring</a>
+    </div>
+    <p>If you have any questions, feel free to reach out to our support team.</p>
+    <p>Best regards,<br>The kjeyPleng Team</p>
+  </div>
+  <div style="text-align: center; margin-top: 20px; color: #888; font-size: 0.8em;">
+    <p>This is an automated message, please do not reply to this email.</p>
+  </div>
+</body>
+</html>
+`;

@@ -35,6 +35,7 @@ export const signUp = async (req, res) => {
         // jwt
         generateTokenAndSetCookie(res, user[0].id);
         await sendVerificationEmail(user[0].email, verificationToken);
+        console.log("Verification Token: ", verificationToken);
 
         res.status(201).json({
             success: true,
@@ -164,6 +165,7 @@ export const forgotPassword = async (req, res) => {
         `;
 
         await sendPasswordResetEmail(updatedUser[0].email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`)
+        console.log(`${process.env.CLIENT_URL}/reset-password/${resetToken}`);
 
 
 
@@ -231,5 +233,52 @@ export const checkAuth = async (req, res) => {
         console.log("Error in checkAuth", error);
         res.status(400).json({ success: false, message: error.message });
         
+    }
+}
+
+export const changePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    
+    try {
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+        }
+
+        // Get the user from the database
+        const user = await sql`
+            SELECT * FROM userschema WHERE id=${req.userId} LIMIT 1
+        `;
+
+        if (user.length === 0) {
+            return res.status(400).json({ success: false, message: "User not found" });
+        }
+
+        // Verify current password
+        const isPasswordValid = await bcryptjs.compare(currentPassword, user[0].password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ success: false, message: "Current password is incorrect" });
+        }
+
+        // Hash the new password
+        const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
+        // Update the password
+        await sql`
+            UPDATE userschema
+            SET 
+                password = ${hashedPassword},
+                updated_at = NOW()
+            WHERE id = ${user[0].id}
+        `;
+
+        res.status(200).json({ success: true, message: "Password changed successfully" });
+
+    } catch (error) {
+        console.log("Error in changePassword", error);
+        res.status(400).json({ success: false, message: error.message });
     }
 }
