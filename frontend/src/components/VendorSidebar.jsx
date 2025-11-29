@@ -60,12 +60,20 @@ export default function VendorSidebar({ activeTab, onNavigate }) {
   return (
     <div className="w-64 min-h-screen border-r border-gray-300">
       <div className="flex flex-col items-center py-8 border-b border-gray-300">
-        <div className="relative flex items-center justify-center w-32 h-32 mb-4 overflow-hidden bg-gray-300 rounded-full">
-          <svg className="w-20 h-20" fill="none" viewBox="0 0 110 110">
-            <path d={svgPaths.p115e3af0} fill="#292D32" fillOpacity="0.8" />
-            <path d={svgPaths.p1e24cf00} fill="#292D32" fillOpacity="0.8" />
-          </svg>
-        </div>
+        {user?.profile_picture ? (
+          <img
+            src={user.profile_picture}
+            alt={username}
+            className="w-32 h-32 mb-4 rounded-full object-cover border-4 border-gray-200"
+          />
+        ) : (
+          <div className="relative flex items-center justify-center w-32 h-32 mb-4 overflow-hidden bg-gray-300 rounded-full">
+            <svg className="w-20 h-20" fill="none" viewBox="0 0 110 110">
+              <path d={svgPaths.p115e3af0} fill="#292D32" fillOpacity="0.8" />
+              <path d={svgPaths.p1e24cf00} fill="#292D32" fillOpacity="0.8" />
+            </svg>
+          </div>
+        )}
         <p className="text-lg">{username}</p>
       </div>
 

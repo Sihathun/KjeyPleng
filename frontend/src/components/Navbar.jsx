@@ -97,11 +97,19 @@ export default function Navbar() {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
             >
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {user.name?.charAt(0).toUpperCase()}
-                </span>
-              </div>
+              {user.profile_picture ? (
+                <img
+                  src={user.profile_picture}
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    {user.name?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
               <span className="text-black font-medium max-w-[120px] truncate">
                 {user.name?.split(' ')[0]}
               </span>

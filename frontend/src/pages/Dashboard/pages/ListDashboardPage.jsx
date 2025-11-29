@@ -1,12 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useProductStore } from '../../../store/productStore';
 import { useNavigate } from 'react-router-dom';
 import { Loader, AlertCircle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+// Hardcoded categories - these are fixed and won't change based on products
+const CATEGORIES = [
+  { value: 'guitars', label: 'Guitars' },
+  { value: 'pianos', label: 'Pianos & Keyboards' },
+  { value: 'drums', label: 'Drums & Percussion' },
+  { value: 'strings', label: 'String Instruments' },
+  { value: 'winds', label: 'Wind Instruments' },
+  { value: 'brass', label: 'Brass Instruments' },
+  { value: 'audio', label: 'Audio Equipment' },
+  { value: 'accessories', label: 'Accessories' },
+  { value: 'other', label: 'Other' },
+];
+
 export default function ListProductPage() {
   const navigate = useNavigate();
-  const { createProduct, fetchCategories, categories, isLoading, error } = useProductStore();
+  const { createProduct, isLoading, error } = useProductStore();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -24,10 +37,6 @@ export default function ListProductPage() {
   const [imagePreviews, setImagePreviews] = useState([]); // Store preview URLs
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -223,18 +232,9 @@ export default function ListProductPage() {
                 }`}
               >
                 <option value="">Select category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                {CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
                 ))}
-                <option value="guitars">Guitars</option>
-                <option value="pianos">Pianos & Keyboards</option>
-                <option value="drums">Drums & Percussion</option>
-                <option value="strings">String Instruments</option>
-                <option value="winds">Wind Instruments</option>
-                <option value="brass">Brass Instruments</option>
-                <option value="audio">Audio Equipment</option>
-                <option value="accessories">Accessories</option>
-                <option value="other">Other</option>
               </select>
               {errors.category && <p className="mt-2 text-sm text-red-500">{errors.category}</p>}
             </div>

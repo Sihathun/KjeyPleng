@@ -156,4 +156,51 @@ export const useAuthStore = create((set) => ({
       throw error;
     }
   },
+
+  updateProfilePicture: async (file) => {
+    set({ isLoading: true, error: null });
+    try {
+      const formData = new FormData();
+      formData.append("profilePicture", file);
+
+      const response = await axios.post(
+        `${API_URL}/update-profile-picture`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      set({
+        user: response.data.user,
+        isLoading: false,
+      });
+      return response.data;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error.response?.data?.message || "Error updating profile picture",
+      });
+      throw error;
+    }
+  },
+
+  removeProfilePicture: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.delete(`${API_URL}/remove-profile-picture`);
+      set({
+        user: response.data.user,
+        isLoading: false,
+      });
+      return response.data;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error.response?.data?.message || "Error removing profile picture",
+      });
+      throw error;
+    }
+  },
 }));

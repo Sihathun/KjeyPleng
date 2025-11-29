@@ -3,7 +3,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Loader } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
-import googleImg from "/images/googleLogo.png";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -35,22 +34,9 @@ export default function SignInPage() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-center text-gray-600 mb-12">
+        <p className="text-center text-gray-600 mb-8">
           Welcome! Please sign in to continue.
         </p>
-
-        {/* Continue with Google Button */}
-        <button className="w-full border border-gray-300 rounded-xl py-3 px-4 flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors mb-6">
-          <img src={googleImg} alt="Google" className="w-6 h-6" />
-          <span>Continue with Google</span>
-        </button>
-
-        {/* Divider */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 border-t border-gray-300" />
-          <p className="text-gray-500">or</p>
-          <div className="flex-1 border-t border-gray-300" />
-        </div>
 
         <form onSubmit={handleLogin}>
           {/* Email Input */}

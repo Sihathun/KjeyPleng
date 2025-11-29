@@ -374,9 +374,24 @@ export default function SearchPage() {
                       <p className="text-blue-600 font-semibold">
                         {formatPrice(product)}
                       </p>
-                      <button className="w-full py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
-                        {product.listing_type === 'rent' ? 'Rent Now' : 'Buy Now'}
-                      </button>
+                      {product.listing_type === 'both' ? (
+                        <div className="flex gap-2">
+                          <button className="flex-1 py-2 text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
+                            Buy Now
+                          </button>
+                          <button className="flex-1 py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
+                            Rent Now
+                          </button>
+                        </div>
+                      ) : (
+                        <button className={`w-full py-2 text-white transition-colors rounded-lg ${
+                          product.listing_type === 'rent' 
+                            ? 'bg-blue-500 hover:bg-blue-600' 
+                            : 'bg-green-500 hover:bg-green-600'
+                        }`}>
+                          {product.listing_type === 'rent' ? 'Rent Now' : 'Buy Now'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </Link>

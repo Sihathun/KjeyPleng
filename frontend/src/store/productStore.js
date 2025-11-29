@@ -10,6 +10,7 @@ export const useProductStore = create((set, get) => ({
   myListings: [],
   currentProduct: null,
   categories: [],
+  dashboardStats: null,
   isLoading: false,
   error: null,
 
@@ -166,6 +167,22 @@ export const useProductStore = create((set, get) => ({
       set({ categories: response.data.data });
     } catch (error) {
       console.error("Error fetching categories", error);
+    }
+  },
+
+  // Fetch dashboard statistics for the logged-in user
+  fetchDashboardStats: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.get(`${API_URL}/dashboard/stats`);
+      set({ dashboardStats: response.data.data, isLoading: false });
+      return response.data.data;
+    } catch (error) {
+      set({
+        error: error.response?.data?.message || "Error fetching dashboard stats",
+        isLoading: false,
+      });
+      throw error;
     }
   },
 

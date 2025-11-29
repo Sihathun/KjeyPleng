@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Eye, EyeOff, Loader, User, Lock } from "lucide-react";
+import { useState, useRef } from "react";
+import { Eye, EyeOff, Loader, User, Lock, Camera, Trash2 } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 
@@ -55,20 +55,142 @@ export default function AccountSettingsPage() {
 }
 
 function ProfileSection({ user }) {
+  const { updateProfilePicture, removeProfilePicture, isLoading } = useAuthStore();
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await updateProfilePicture(file);
+      toast.success('Profile picture updated successfully!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error updating profile picture');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemovePicture = async () => {
+    if (!user?.profile_picture) return;
+
+    setIsRemoving(true);
+    try {
+      await removeProfilePicture();
+      toast.success('Profile picture removed successfully!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error removing profile picture');
+    } finally {
+      setIsRemoving(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm p-8">
       <h2 className="text-xl font-semibold mb-6">Profile Information</h2>
 
       {/* Profile Picture */}
       <div className="flex items-center gap-6 mb-8">
-        <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-3xl font-bold">
-            {user?.name?.charAt(0).toUpperCase()}
-          </span>
+        <div className="relative group">
+          {user?.profile_picture ? (
+            <img
+              src={user.profile_picture}
+              alt={user.name}
+              className="w-24 h-24 rounded-full object-cover border-4 border-gray-100"
+            />
+          ) : (
+            <div className="w-24 h-24 bg-blue-500 rounded-full flex items-center justify-center border-4 border-gray-100">
+              <span className="text-white text-3xl font-bold">
+                {user?.name?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          
+          {/* Upload overlay */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading || isRemoving}
+            className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isUploading ? (
+              <Loader className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+          </button>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
-        <div>
+        
+        <div className="flex-1">
           <h3 className="font-semibold text-lg">{user?.name}</h3>
-          <p className="text-gray-500">{user?.email}</p>
+          <p className="text-gray-500 mb-3">{user?.email}</p>
+          
+          <div className="flex gap-2">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || isRemoving}
+              className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <Loader className="w-4 h-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Camera className="w-4 h-4" />
+                  {user?.profile_picture ? 'Change Photo' : 'Upload Photo'}
+                </>
+              )}
+            </button>
+            
+            {user?.profile_picture && (
+              <button
+                onClick={handleRemovePicture}
+                disabled={isUploading || isRemoving}
+                className="px-4 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isRemoving ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Remove
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
