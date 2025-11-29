@@ -208,10 +208,18 @@ export default function ManageProductPage() {
                         <span className="inline-block px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 font-medium">
                           Sold
                         </span>
+                      ) : product.is_ongoing ? (
+                        <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
+                          Ongoing
+                        </span>
+                      ) : product.is_available && !expirationStatus.isExpired ? (
+                        <span className="inline-block px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">
+                          Listed
+                        </span>
                       ) : (
-                        <span className={`inline-block w-3 h-3 rounded-full ${
-                          product.is_available && !expirationStatus.isExpired ? 'bg-green-500' : 'bg-gray-400'
-                        }`} title={product.is_available && !expirationStatus.isExpired ? 'Listed' : 'Hidden'}></span>
+                        <span className="inline-block px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 font-medium">
+                          Unlisted
+                        </span>
                       )}
                     </div>
 

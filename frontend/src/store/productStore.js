@@ -247,11 +247,15 @@ export const useProductStore = create((set, get) => ({
     try {
       const response = await axios.put(`${API_URL}/orders/${id}/status`, { status, type });
       set((state) => ({
-        sellerOrders: state.sellerOrders.map((o) =>
-          o.id === id && o.order_type === (type === 'rental' ? 'rental' : o.order_type)
-            ? { ...o, status }
-            : o
-        ),
+        sellerOrders: state.sellerOrders.map((o) => {
+          // Match by both id AND order type to avoid updating wrong order
+          const isRental = type === 'rental';
+          const orderIsRental = o.order_type === 'rental';
+          if (o.id === id && isRental === orderIsRental) {
+            return { ...o, status };
+          }
+          return o;
+        }),
         isLoading: false,
       }));
       return response.data.data;

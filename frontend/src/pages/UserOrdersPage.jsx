@@ -171,7 +171,7 @@ export default function UserOrdersPage() {
                 >
                   <div className="flex items-center gap-4">
                     {/* Product Image */}
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
                       {order.product_image ? (
                         <img
                           src={getProductImage(order.product_image)}

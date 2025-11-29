@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 export default function OrdersDashboardPage() {
   const { sellerOrders, fetchSellerOrders, updateOrderStatus, isLoading, error } = useProductStore();
-  const [updatingId, setUpdatingId] = useState(null);
+  const [updatingOrder, setUpdatingOrder] = useState(null); // { id, type }
   const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
@@ -14,14 +14,14 @@ export default function OrdersDashboardPage() {
 
   const handleStatusChange = async (order, newStatus) => {
     try {
-      setUpdatingId(order.id);
       const type = order.order_type === 'rental' ? 'rental' : 'order';
+      setUpdatingOrder({ id: order.id, type });
       await updateOrderStatus(order.id, newStatus, type);
       toast.success('Order status updated');
     } catch (err) {
       toast.error('Failed to update status');
     } finally {
-      setUpdatingId(null);
+      setUpdatingOrder(null);
     }
   };
 
@@ -323,7 +323,7 @@ export default function OrdersDashboardPage() {
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order, e.target.value)}
-                          disabled={updatingId === order.id}
+                          disabled={updatingOrder?.id === order.id && updatingOrder?.type === (order.order_type === 'rental' ? 'rental' : 'order')}
                           className={`w-full appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 cursor-pointer hover:bg-gray-100 transition-colors text-sm disabled:opacity-50 ${getStatusColor(order.status)}`}
                         >
                           {getStatusOptions(order.order_type).map((status) => (
@@ -333,7 +333,7 @@ export default function OrdersDashboardPage() {
                           ))}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          {updatingId === order.id ? (
+                          {updatingOrder?.id === order.id && updatingOrder?.type === (order.order_type === 'rental' ? 'rental' : 'order') ? (
                             <Loader className="w-4 h-4 animate-spin" />
                           ) : (
                             <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
