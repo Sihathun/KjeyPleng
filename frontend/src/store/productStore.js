@@ -8,6 +8,7 @@ axios.defaults.withCredentials = true;
 export const useProductStore = create((set, get) => ({
   products: [],
   myListings: [],
+  sellerOrders: [],
   currentProduct: null,
   categories: [],
   dashboardStats: null,
@@ -180,6 +181,66 @@ export const useProductStore = create((set, get) => ({
     } catch (error) {
       set({
         error: error.response?.data?.message || "Error fetching dashboard stats",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Renew a listing for 3 more days
+  renewListing: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.post(`${API_URL}/renew/${id}`);
+      set((state) => ({
+        myListings: state.myListings.map((p) =>
+          p.id === id ? response.data.data : p
+        ),
+        isLoading: false,
+      }));
+      return response.data.data;
+    } catch (error) {
+      set({
+        error: error.response?.data?.message || "Error renewing listing",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Fetch seller's orders (orders where current user is the seller)
+  fetchSellerOrders: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.get(`${API_URL}/my/orders`);
+      set({ sellerOrders: response.data.data, isLoading: false });
+      return response.data.data;
+    } catch (error) {
+      set({
+        error: error.response?.data?.message || "Error fetching orders",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Update order status
+  updateOrderStatus: async (id, status, type = 'order') => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.put(`${API_URL}/orders/${id}/status`, { status, type });
+      set((state) => ({
+        sellerOrders: state.sellerOrders.map((o) =>
+          o.id === id && o.order_type === (type === 'rental' ? 'rental' : o.order_type)
+            ? { ...o, status }
+            : o
+        ),
+        isLoading: false,
+      }));
+      return response.data.data;
+    } catch (error) {
+      set({
+        error: error.response?.data?.message || "Error updating order status",
         isLoading: false,
       });
       throw error;

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useProductStore } from '../../../store/productStore';
-import { Edit, Trash2, Eye, EyeOff, Loader, Package, AlertCircle } from 'lucide-react';
+import { Edit, Trash2, Eye, EyeOff, Loader, Package, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ManageProductPage() {
-  const { myListings, fetchMyListings, updateProduct, deleteProduct, isLoading, error } = useProductStore();
+  const { myListings, fetchMyListings, updateProduct, deleteProduct, renewListing, isLoading, error } = useProductStore();
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [renewingId, setRenewingId] = useState(null);
 
   useEffect(() => {
     fetchMyListings();
@@ -55,9 +56,39 @@ export default function ManageProductPage() {
     }
   };
 
+  const handleRenew = async (productId) => {
+    try {
+      setRenewingId(productId);
+      await renewListing(productId);
+      toast.success('Listing renewed for 3 more days!');
+    } catch (err) {
+      toast.error('Failed to renew listing');
+    } finally {
+      setRenewingId(null);
+    }
+  };
+
   const formatPrice = (price) => {
     if (!price) return '-';
     return `$${parseFloat(price).toFixed(2)}`;
+  };
+
+  const getExpirationStatus = (expiresAt) => {
+    if (!expiresAt) return { text: 'No expiry', color: 'text-gray-500', isExpired: false };
+    
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diffMs = expiry - now;
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+    
+    if (diffMs <= 0) {
+      return { text: 'Expired', color: 'text-red-600', isExpired: true };
+    } else if (diffDays <= 1) {
+      return { text: `${diffHours}h left`, color: 'text-orange-600', isExpired: false };
+    } else {
+      return { text: `${diffDays} days left`, color: 'text-green-600', isExpired: false };
+    }
   };
 
   if (isLoading && myListings.length === 0) {
@@ -102,13 +133,13 @@ export default function ManageProductPage() {
               <div className="border border-gray-300 rounded-lg overflow-hidden">
                 {/* Table Header */}
                 <div className="grid grid-cols-12 gap-4 bg-gray-100 px-6 py-4 border-b border-gray-300">
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <p className="text-sm font-medium">Product Name</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-sm font-medium">Category</p>
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1">
                     <p className="text-sm font-medium">Type</p>
                   </div>
                   <div className="col-span-2">
@@ -118,19 +149,24 @@ export default function ManageProductPage() {
                     <p className="text-sm font-medium">Status</p>
                   </div>
                   <div className="col-span-2">
+                    <p className="text-sm font-medium">Expires</p>
+                  </div>
+                  <div className="col-span-2">
                     <p className="text-sm font-medium">Actions</p>
                   </div>
                 </div>
 
                 {/* Table Body */}
-                {myListings.map((product) => (
+                {myListings.map((product) => {
+                  const expirationStatus = getExpirationStatus(product.expires_at);
+                  return (
                   <div 
                     key={product.id}
                     className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-200 last:border-b-0 items-center"
                   >
                     {/* Product Name */}
-                    <div className="col-span-3">
-                      <p className="font-medium">{product.name}</p>
+                    <div className="col-span-2">
+                      <p className="font-medium truncate">{product.name}</p>
                       <p className="text-sm text-gray-500 truncate">{product.brand || 'No brand'}</p>
                     </div>
 
@@ -140,13 +176,13 @@ export default function ManageProductPage() {
                     </div>
 
                     {/* Listing Type */}
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                       <span className={`inline-block px-2 py-1 text-xs rounded-full ${
                         product.listing_type === 'sale' ? 'bg-green-100 text-green-700' :
                         product.listing_type === 'rent' ? 'bg-blue-100 text-blue-700' :
                         'bg-purple-100 text-purple-700'
                       }`}>
-                        {product.listing_type === 'both' ? 'Sale & Rent' : product.listing_type?.charAt(0).toUpperCase() + product.listing_type?.slice(1)}
+                        {product.listing_type === 'both' ? 'Both' : product.listing_type?.charAt(0).toUpperCase() + product.listing_type?.slice(1)}
                       </span>
                     </div>
 
@@ -169,12 +205,28 @@ export default function ManageProductPage() {
                     {/* Status */}
                     <div className="col-span-1">
                       <span className={`inline-block w-3 h-3 rounded-full ${
-                        product.is_available ? 'bg-green-500' : 'bg-gray-400'
-                      }`} title={product.is_available ? 'Listed' : 'Hidden'}></span>
+                        product.is_available && !expirationStatus.isExpired ? 'bg-green-500' : 'bg-gray-400'
+                      }`} title={product.is_available && !expirationStatus.isExpired ? 'Listed' : 'Hidden'}></span>
+                    </div>
+
+                    {/* Expiration */}
+                    <div className="col-span-2">
+                      <div className="flex items-center gap-1">
+                        <Clock className={`w-3 h-3 ${expirationStatus.color}`} />
+                        <span className={`text-sm ${expirationStatus.color}`}>{expirationStatus.text}</span>
+                      </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="col-span-2 flex gap-2">
+                    <div className="col-span-2 flex gap-1">
+                      <button
+                        onClick={() => handleRenew(product.id)}
+                        disabled={renewingId === product.id}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
+                        title="Renew for 3 days"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${renewingId === product.id ? 'animate-spin' : ''}`} />
+                      </button>
                       <button
                         onClick={() => handleEdit(product)}
                         className="p-2 text-orange-500 hover:bg-orange-50 rounded-md transition-colors"
@@ -198,7 +250,8 @@ export default function ManageProductPage() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
