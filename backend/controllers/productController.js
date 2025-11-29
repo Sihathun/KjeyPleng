@@ -8,7 +8,7 @@ export const getProducts = async (req, res) => {
 
         let products;
 
-        // Basic query - get all available products
+        // Basic query - get all available products (excluding expired ones)
         if (!category && !listing_type && !min_price && !max_price && !condition && !location && !search) {
             products = await sql`
                 SELECT 
@@ -19,10 +19,11 @@ export const getProducts = async (req, res) => {
                 FROM instruments i
                 JOIN userschema u ON i.user_id = u.id
                 WHERE i.is_available = true
+                AND (i.expires_at IS NULL OR i.expires_at > NOW())
                 ORDER BY i.created_at DESC
             `;
         } else {
-            // Filtered query
+            // Filtered query (excluding expired listings)
             products = await sql`
                 SELECT 
                     i.*,
@@ -32,6 +33,7 @@ export const getProducts = async (req, res) => {
                 FROM instruments i
                 JOIN userschema u ON i.user_id = u.id
                 WHERE i.is_available = true
+                AND (i.expires_at IS NULL OR i.expires_at > NOW())
                 ${category ? sql`AND i.category = ${category}` : sql``}
                 ${listing_type ? sql`AND i.listing_type = ${listing_type}` : sql``}
                 ${condition ? sql`AND i.condition = ${condition}` : sql``}
@@ -247,6 +249,18 @@ export const getMyListings = async (req, res) => {
     const userId = req.userId;
 
     try {
+        // First, mark any expired listings as unavailable
+        await sql`
+            UPDATE instruments
+            SET 
+                is_available = FALSE,
+                updated_at = NOW()
+            WHERE user_id = ${userId}
+                AND expires_at IS NOT NULL
+                AND expires_at < NOW()
+                AND is_available = TRUE
+        `;
+
         const listings = await sql`
             SELECT * FROM instruments 
             WHERE user_id = ${userId}
@@ -425,6 +439,189 @@ export const getDashboardStats = async (req, res) => {
         });
     } catch (error) {
         console.log("Error getDashboardStats", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// Renew a listing for 3 more days (authenticated - only owner can renew)
+export const renewListing = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.userId;
+
+    try {
+        // Check if product exists and belongs to user
+        const existingProduct = await sql`
+            SELECT * FROM instruments WHERE id = ${id}
+        `;
+
+        if (existingProduct.length === 0) {
+            return res.status(404).json({ success: false, message: "Product not found" });
+        }
+
+        if (existingProduct[0].user_id !== userId) {
+            return res.status(403).json({ success: false, message: "You can only renew your own listings" });
+        }
+
+        // Renew the listing: set expires_at to 3 days from NOW (not from current expiry)
+        // Also set is_available to true when renewing
+        const renewedProduct = await sql`
+            UPDATE instruments
+            SET 
+                expires_at = NOW() + INTERVAL '3 days',
+                is_available = TRUE,
+                updated_at = NOW()
+            WHERE id = ${id}
+            RETURNING *
+        `;
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Listing renewed for 3 days",
+            data: renewedProduct[0] 
+        });
+    } catch (error) {
+        console.log("Error renewListing", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// Check and update expired listings (can be called periodically or on fetch)
+export const checkExpiredListings = async (userId) => {
+    try {
+        // Mark listings as unavailable if they've expired
+        await sql`
+            UPDATE instruments
+            SET 
+                is_available = FALSE,
+                updated_at = NOW()
+            WHERE user_id = ${userId}
+                AND expires_at < NOW()
+                AND is_available = TRUE
+        `;
+    } catch (error) {
+        console.log("Error checking expired listings", error);
+    }
+};
+
+// Get orders for a seller (authenticated - shows orders where user is the seller)
+export const getSellerOrders = async (req, res) => {
+    const userId = req.userId;
+
+    try {
+        // Get all orders (both purchases and rentals) where the user is the seller/owner
+        const orders = await sql`
+            SELECT 
+                o.id,
+                o.instrument_id,
+                o.order_type,
+                o.quantity,
+                o.unit_price,
+                o.total_price,
+                o.status,
+                o.payment_status,
+                o.shipping_address,
+                o.notes,
+                o.created_at,
+                i.name as product_name,
+                i.image as product_image,
+                i.category as product_category,
+                u.name as customer_name,
+                u.email as customer_email,
+                u.profile_picture as customer_profile_picture
+            FROM orders o
+            JOIN instruments i ON o.instrument_id = i.id
+            JOIN userschema u ON o.buyer_id = u.id
+            WHERE o.seller_id = ${userId}
+            ORDER BY o.created_at DESC
+        `;
+
+        // Also get rentals where user is the owner
+        const rentals = await sql`
+            SELECT 
+                r.id,
+                r.instrument_id,
+                'rental' as order_type,
+                1 as quantity,
+                r.total_price as unit_price,
+                r.total_price,
+                r.status,
+                'completed' as payment_status,
+                NULL as shipping_address,
+                NULL as notes,
+                r.created_at,
+                r.start_date,
+                r.end_date,
+                i.name as product_name,
+                i.image as product_image,
+                i.category as product_category,
+                u.name as customer_name,
+                u.email as customer_email,
+                u.profile_picture as customer_profile_picture
+            FROM rentals r
+            JOIN instruments i ON r.instrument_id = i.id
+            JOIN userschema u ON r.renter_id = u.id
+            WHERE r.owner_id = ${userId}
+            ORDER BY r.created_at DESC
+        `;
+
+        // Combine and sort by date
+        const allOrders = [...orders, ...rentals].sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        res.status(200).json({ success: true, data: allOrders });
+    } catch (error) {
+        console.log("Error getSellerOrders", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// Update order status (authenticated - only seller can update)
+export const updateOrderStatus = async (req, res) => {
+    const { id } = req.params;
+    const { status, type } = req.body; // type can be 'order' or 'rental'
+    const userId = req.userId;
+
+    try {
+        if (type === 'rental') {
+            // Check if rental exists and belongs to user
+            const existingRental = await sql`
+                SELECT * FROM rentals WHERE id = ${id} AND owner_id = ${userId}
+            `;
+
+            if (existingRental.length === 0) {
+                return res.status(404).json({ success: false, message: "Rental not found or unauthorized" });
+            }
+
+            const updatedRental = await sql`
+                UPDATE rentals
+                SET status = ${status}, updated_at = NOW()
+                WHERE id = ${id}
+                RETURNING *
+            `;
+
+            res.status(200).json({ success: true, data: updatedRental[0] });
+        } else {
+            // Check if order exists and belongs to user
+            const existingOrder = await sql`
+                SELECT * FROM orders WHERE id = ${id} AND seller_id = ${userId}
+            `;
+
+            if (existingOrder.length === 0) {
+                return res.status(404).json({ success: false, message: "Order not found or unauthorized" });
+            }
+
+            const updatedOrder = await sql`
+                UPDATE orders
+                SET status = ${status}, updated_at = NOW()
+                WHERE id = ${id}
+                RETURNING *
+            `;
+
+            res.status(200).json({ success: true, data: updatedOrder[0] });
+        }
+    } catch (error) {
+        console.log("Error updateOrderStatus", error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
