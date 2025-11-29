@@ -27,9 +27,20 @@ app.use(express.json());
 app.use(helmet());
 app.use(morgan("dev"));
 
-// apply arcjet rate-limit to all routes
+// Endpoints excluded from rate limiting
+const excludedFromRateLimit = [
+    '/api/auth/check-auth',
+    '/api/products',        // Public product listing
+    '/api/products/categories',
+];
 
-/* app.use(async (req, res, next) => {
+// Apply arcjet rate-limit to all routes except excluded ones
+app.use(async (req, res, next) => {
+    // Skip rate limiting for excluded endpoints
+    if (excludedFromRateLimit.some(path => req.path === path || req.path.startsWith(path + '/'))) {
+        return next();
+    }
+
     try {
         const decision = await aj.protect(req, {
             requested: 1 // specifies that each request consumes 1 token
@@ -37,33 +48,29 @@ app.use(morgan("dev"));
 
         if (decision.isDenied()) {
             if (decision.reason.isRateLimit()) {
-                res.status(429).json({
+                return res.status(429).json({
                     error: "Too many requests",
-                })
+                });
             } else if (decision.reason.isBot()) {
-                res.status(403).json({
+                return res.status(403).json({
                     error: "Bot access denied",
-                })
+                });
             } else {
-                res.status(403).json({error: "Forbidden"});
+                return res.status(403).json({ error: "Forbidden" });
             }
-            return;
         }   
 
-        //check for spoofed bots
-        
-        if (decision.results.some((result) => result.reason.isBot()  && result.reason.isSpoofed())) {
-            res.status(403).json({error: "Spoofed bot detected"});
-            return;
+        // Check for spoofed bots
+        if (decision.results.some((result) => result.reason.isBot() && result.reason.isSpoofed())) {
+            return res.status(403).json({ error: "Spoofed bot detected" });
         }
 
         next();
     } catch (error) {
         console.log("Arcjet error", error);
         next(error);
-
     }
-}) */
+})
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
