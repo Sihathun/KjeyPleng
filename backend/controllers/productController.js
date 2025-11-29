@@ -294,7 +294,17 @@ export const getMyListings = async (req, res) => {
                 CASE WHEN EXISTS (
                     SELECT 1 FROM orders o 
                     WHERE o.instrument_id = i.id AND o.status = 'completed'
-                ) THEN true ELSE false END as is_sold
+                ) OR EXISTS (
+                    SELECT 1 FROM rentals r 
+                    WHERE r.instrument_id = i.id AND r.status = 'completed'
+                ) THEN true ELSE false END as is_sold,
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM orders o 
+                    WHERE o.instrument_id = i.id AND o.status IN ('processing', 'shipped')
+                ) OR EXISTS (
+                    SELECT 1 FROM rentals r 
+                    WHERE r.instrument_id = i.id AND r.status = 'active'
+                ) THEN true ELSE false END as is_ongoing
             FROM instruments i
             WHERE i.user_id = ${userId}
             ORDER BY i.created_at DESC
