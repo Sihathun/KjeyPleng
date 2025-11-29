@@ -17,18 +17,19 @@ const PORT = process.env.PORT || 3000;
 
 console.log(PORT);
 
-app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     origin: "http://localhost:5173",
     credentials: true,
 }));
+
+app.use(express.json());
 app.use(helmet());
 app.use(morgan("dev"));
 
 // apply arcjet rate-limit to all routes
 
-app.use(async (req, res, next) => {
+/* app.use(async (req, res, next) => {
     try {
         const decision = await aj.protect(req, {
             requested: 1 // specifies that each request consumes 1 token
@@ -62,7 +63,7 @@ app.use(async (req, res, next) => {
         next(error);
 
     }
-})
+}) */
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
