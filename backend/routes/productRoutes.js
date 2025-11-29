@@ -8,7 +8,8 @@ import {
     getMyListings,
     getUserListings,
     getCategories,
-    uploadProductImages
+    uploadProductImages,
+    getDashboardStats
 } from "../controllers/productController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import upload from "../middleware/upload.js";
@@ -21,6 +22,7 @@ router.get("/categories", getCategories);
 
 // Protected routes - must come before /:id to avoid conflicts
 router.get("/my/listings", verifyToken, getMyListings);
+router.get("/dashboard/stats", verifyToken, getDashboardStats);
 router.post("/", verifyToken, upload.array('images', 5), createProduct);
 router.post("/upload", verifyToken, upload.array('images', 5), uploadProductImages);
 

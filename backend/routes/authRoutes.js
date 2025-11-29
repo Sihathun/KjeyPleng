@@ -1,6 +1,7 @@
 import express from "express";
-import { logIn, logOut, signUp, verifyEmail, forgotPassword, resetPassword, checkAuth, changePassword } from "../controllers/authController.js";
+import { logIn, logOut, signUp, verifyEmail, forgotPassword, resetPassword, checkAuth, changePassword, updateProfilePicture, removeProfilePicture } from "../controllers/authController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
+import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -15,6 +16,9 @@ router.post("/forgot-password", forgotPassword);
 
 router.post("/reset-password/:token", resetPassword);
 router.post("/change-password", verifyToken, changePassword);
+
+router.post("/update-profile-picture", verifyToken, upload.single('profilePicture'), updateProfilePicture);
+router.delete("/remove-profile-picture", verifyToken, removeProfilePicture);
 
 
 

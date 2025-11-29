@@ -5,6 +5,7 @@ import crypto from "crypto";
 
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendResetSuccessEmail } from "../mailtrap/emails.js";
+import { uploadImage, deleteImage } from "../utils/uploadImage.js";
 
 export const signUp = async (req, res) => {
     const {email, password, name} = req.body;
@@ -279,6 +280,105 @@ export const changePassword = async (req, res) => {
 
     } catch (error) {
         console.log("Error in changePassword", error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+}
+
+export const updateProfilePicture = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "No image file provided" });
+        }
+
+        // Get current user to check if they have an existing profile picture
+        const currentUser = await sql`
+            SELECT profile_picture_public_id FROM userschema WHERE id = ${req.userId} LIMIT 1
+        `;
+
+        if (currentUser.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Delete old profile picture from Cloudinary if exists
+        if (currentUser[0].profile_picture_public_id) {
+            try {
+                await deleteImage(currentUser[0].profile_picture_public_id);
+            } catch (error) {
+                console.log("Error deleting old profile picture:", error);
+            }
+        }
+
+        // Upload new profile picture to Cloudinary
+        const result = await uploadImage(req.file.buffer, 'kjeypleng/profiles');
+
+        // Update user in database
+        const updatedUser = await sql`
+            UPDATE userschema
+            SET 
+                profile_picture = ${result.url},
+                profile_picture_public_id = ${result.public_id},
+                updated_at = NOW()
+            WHERE id = ${req.userId}
+            RETURNING *
+        `;
+
+        res.status(200).json({
+            success: true,
+            message: "Profile picture updated successfully",
+            user: {
+                ...updatedUser[0],
+                password: undefined
+            }
+        });
+
+    } catch (error) {
+        console.log("Error in updateProfilePicture", error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+}
+
+export const removeProfilePicture = async (req, res) => {
+    try {
+        // Get current user to check if they have an existing profile picture
+        const currentUser = await sql`
+            SELECT profile_picture_public_id FROM userschema WHERE id = ${req.userId} LIMIT 1
+        `;
+
+        if (currentUser.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Delete profile picture from Cloudinary if exists
+        if (currentUser[0].profile_picture_public_id) {
+            try {
+                await deleteImage(currentUser[0].profile_picture_public_id);
+            } catch (error) {
+                console.log("Error deleting profile picture:", error);
+            }
+        }
+
+        // Update user in database - set profile picture to null
+        const updatedUser = await sql`
+            UPDATE userschema
+            SET 
+                profile_picture = NULL,
+                profile_picture_public_id = NULL,
+                updated_at = NOW()
+            WHERE id = ${req.userId}
+            RETURNING *
+        `;
+
+        res.status(200).json({
+            success: true,
+            message: "Profile picture removed successfully",
+            user: {
+                ...updatedUser[0],
+                password: undefined
+            }
+        });
+
+    } catch (error) {
+        console.log("Error in removeProfilePicture", error);
         res.status(400).json({ success: false, message: error.message });
     }
 }

@@ -85,6 +85,8 @@ async function initDB() {
                 email VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 name VARCHAR(255) NOT NULL,
+                profile_picture VARCHAR(500),
+                profile_picture_public_id VARCHAR(255),
                 lastLogin TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 isVerified BOOLEAN NOT NULL DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -132,6 +134,26 @@ async function initDB() {
                 end_date DATE NOT NULL,
                 total_price DECIMAL(10, 2) NOT NULL,
                 status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+
+        // Orders table for tracking sales transactions
+        await sql`
+            CREATE TABLE IF NOT EXISTS orders (
+                id SERIAL PRIMARY KEY,
+                instrument_id INTEGER NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+                buyer_id INTEGER NOT NULL REFERENCES userSchema(id) ON DELETE CASCADE,
+                seller_id INTEGER NOT NULL REFERENCES userSchema(id) ON DELETE CASCADE,
+                order_type VARCHAR(20) NOT NULL DEFAULT 'sale',
+                quantity INTEGER NOT NULL DEFAULT 1,
+                unit_price DECIMAL(10, 2) NOT NULL,
+                total_price DECIMAL(10, 2) NOT NULL,
+                status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                payment_status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                shipping_address TEXT,
+                notes TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )

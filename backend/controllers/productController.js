@@ -14,7 +14,8 @@ export const getProducts = async (req, res) => {
                 SELECT 
                     i.*,
                     u.name as seller_name,
-                    u.email as seller_email
+                    u.email as seller_email,
+                    u.profile_picture as seller_profile_picture
                 FROM instruments i
                 JOIN userschema u ON i.user_id = u.id
                 WHERE i.is_available = true
@@ -26,7 +27,8 @@ export const getProducts = async (req, res) => {
                 SELECT 
                     i.*,
                     u.name as seller_name,
-                    u.email as seller_email
+                    u.email as seller_email,
+                    u.profile_picture as seller_profile_picture
                 FROM instruments i
                 JOIN userschema u ON i.user_id = u.id
                 WHERE i.is_available = true
@@ -58,7 +60,8 @@ export const getProduct = async (req, res) => {
                 i.*,
                 u.name as seller_name,
                 u.email as seller_email,
-                u.id as seller_id
+                u.id as seller_id,
+                u.profile_picture as seller_profile_picture
             FROM instruments i
             JOIN userschema u ON i.user_id = u.id
             WHERE i.id = ${id}
@@ -312,5 +315,116 @@ export const uploadProductImages = async (req, res) => {
     } catch (error) {
         console.log("Error uploadProductImages", error);
         res.status(500).json({ success: false, message: "Error uploading images" });
+    }
+};
+
+// Get dashboard statistics for the logged-in user (seller analytics)
+export const getDashboardStats = async (req, res) => {
+    const userId = req.userId;
+
+    try {
+        // Total listed products (all products the user has listed)
+        const totalListedResult = await sql`
+            SELECT COUNT(*) as count FROM instruments WHERE user_id = ${userId}
+        `;
+        const totalListedProducts = parseInt(totalListedResult[0]?.count || 0);
+
+        // Ongoing listings (products that are available)
+        const ongoingListingsResult = await sql`
+            SELECT COUNT(*) as count FROM instruments 
+            WHERE user_id = ${userId} AND is_available = true
+        `;
+        const ongoingListings = parseInt(ongoingListingsResult[0]?.count || 0);
+
+        // Total sales revenue (completed orders where user is the seller)
+        const totalSalesResult = await sql`
+            SELECT COALESCE(SUM(total_price), 0) as total FROM orders 
+            WHERE seller_id = ${userId} AND status = 'completed'
+        `;
+        const totalSales = parseFloat(totalSalesResult[0]?.total || 0);
+
+        // Total rental revenue (completed rentals where user is the owner)
+        const totalRentalResult = await sql`
+            SELECT COALESCE(SUM(total_price), 0) as total FROM rentals 
+            WHERE owner_id = ${userId} AND status = 'completed'
+        `;
+        const totalRentals = parseFloat(totalRentalResult[0]?.total || 0);
+
+        // Total revenue = sales + rentals
+        const totalRevenue = totalSales + totalRentals;
+
+        // Ongoing orders (pending/processing orders where user is the seller)
+        const ongoingOrdersResult = await sql`
+            SELECT COUNT(*) as count FROM orders 
+            WHERE seller_id = ${userId} AND status IN ('pending', 'processing', 'shipped')
+        `;
+        const ongoingOrders = parseInt(ongoingOrdersResult[0]?.count || 0);
+
+        // Ongoing rentals (active rentals where user is the owner)
+        const ongoingRentalsResult = await sql`
+            SELECT COUNT(*) as count FROM rentals 
+            WHERE owner_id = ${userId} AND status = 'active'
+        `;
+        const ongoingRentals = parseInt(ongoingRentalsResult[0]?.count || 0);
+
+        // Revenue by day for the last 7 days
+        const revenueByDayResult = await sql`
+            WITH dates AS (
+                SELECT generate_series(
+                    CURRENT_DATE - INTERVAL '6 days',
+                    CURRENT_DATE,
+                    INTERVAL '1 day'
+                )::date AS day
+            ),
+            order_revenue AS (
+                SELECT 
+                    DATE(created_at) as day,
+                    COALESCE(SUM(total_price), 0) as revenue
+                FROM orders 
+                WHERE seller_id = ${userId} 
+                    AND status = 'completed'
+                    AND created_at >= CURRENT_DATE - INTERVAL '6 days'
+                GROUP BY DATE(created_at)
+            ),
+            rental_revenue AS (
+                SELECT 
+                    DATE(created_at) as day,
+                    COALESCE(SUM(total_price), 0) as revenue
+                FROM rentals 
+                WHERE owner_id = ${userId} 
+                    AND status = 'completed'
+                    AND created_at >= CURRENT_DATE - INTERVAL '6 days'
+                GROUP BY DATE(created_at)
+            )
+            SELECT 
+                dates.day,
+                TO_CHAR(dates.day, 'Dy') as day_name,
+                COALESCE(o.revenue, 0) + COALESCE(r.revenue, 0) as revenue
+            FROM dates
+            LEFT JOIN order_revenue o ON dates.day = o.day
+            LEFT JOIN rental_revenue r ON dates.day = r.day
+            ORDER BY dates.day
+        `;
+
+        const revenueByDay = revenueByDayResult.map(row => ({
+            day: row.day_name,
+            revenue: parseFloat(row.revenue || 0)
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: {
+                totalListedProducts,
+                ongoingListings,
+                totalRevenue,
+                totalSales,
+                totalRentals,
+                ongoingOrders: ongoingOrders + ongoingRentals,
+                revenueByDay
+            }
+        });
+    } catch (error) {
+        console.log("Error getDashboardStats", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
