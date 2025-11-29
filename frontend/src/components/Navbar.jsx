@@ -2,14 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Search, User, LogOut, ChevronDown, Settings } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
 import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { getItemCount } = useCartStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const cartItemCount = getItemCount();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -81,14 +84,16 @@ export default function Navbar() {
         </div>
 
         {/* Cart with Badge */}
-        <div className="relative">
+        <Link to="/cart" className="relative">
           <button className="p-2 hover:opacity-75 transition-opacity">
             <ShoppingCart className="w-6 h-6 text-black/75" strokeWidth={1.5} />
           </button>
-          <div className="absolute -top-1 -right-1 w-5 h-5 bg-gray-700 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs">0</span>
-          </div>
-        </div>
+          {cartItemCount > 0 && (
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+              <span className="text-white text-xs font-medium">{cartItemCount > 99 ? '99+' : cartItemCount}</span>
+            </div>
+          )}
+        </Link>
 
         {/* User Section */}
         {isAuthenticated && user ? (

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProductStore } from '../store/productStore';
-import { Loader } from 'lucide-react';
+import { useCartStore } from '../store/cartStore';
+import { Loader, ShoppingCart, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 // Helper function to get condition label
 const getConditionLabel = (condition) => {
@@ -27,7 +29,10 @@ const formatPrice = (product) => {
 export default function ProductPage() {
   const { id } = useParams();
   const { currentProduct: product, fetchProduct, fetchProducts, products, isLoading, error, clearCurrentProduct } = useProductStore();
+  const { addToCart } = useCartStore();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [addedToCart, setAddedToCart] = useState({ sale: false, rental: false });
+  const [rentalDays, setRentalDays] = useState(1);
 
   useEffect(() => {
     if (id) {
@@ -202,23 +207,82 @@ export default function ProductPage() {
               </p>
             </div>
 
+            {/* Rental Days Selector (for rent or both) */}
+            {(product.listing_type === 'rent' || product.listing_type === 'both') && (
+              <div className="pb-6 border-b-2 border-gray-200">
+                <label className="block text-lg font-medium mb-2">Rental Duration</label>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setRentalDays(Math.max(1, rentalDays - 1))}
+                    className="w-10 h-10 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors text-xl font-medium"
+                  >
+                    -
+                  </button>
+                  <span className="text-xl font-semibold w-16 text-center">{rentalDays} {rentalDays === 1 ? 'day' : 'days'}</span>
+                  <button
+                    onClick={() => setRentalDays(rentalDays + 1)}
+                    className="w-10 h-10 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors text-xl font-medium"
+                  >
+                    +
+                  </button>
+                  <span className="text-gray-600">
+                    = ${(parseFloat(product.rental_price) * rentalDays).toFixed(2)} total
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             {product.listing_type === 'both' ? (
               <div className="flex gap-4">
-                <button className="flex-1 py-4 text-xl text-white transition-all bg-green-500 rounded-xl hover:bg-green-600 hover:shadow-lg">
-                  Buy Now
+                <button 
+                  onClick={() => {
+                    addToCart(product, 'sale');
+                    setAddedToCart({ ...addedToCart, sale: true });
+                    toast.success('Added to cart!');
+                    setTimeout(() => setAddedToCart({ ...addedToCart, sale: false }), 2000);
+                  }}
+                  className="flex-1 py-4 text-xl text-white transition-all bg-green-500 rounded-xl hover:bg-green-600 hover:shadow-lg flex items-center justify-center gap-2"
+                >
+                  {addedToCart.sale ? <Check className="w-6 h-6" /> : <ShoppingCart className="w-6 h-6" />}
+                  {addedToCart.sale ? 'Added!' : 'Buy Now'}
                 </button>
-                <button className="flex-1 py-4 text-xl text-white transition-all bg-blue-500 rounded-xl hover:bg-blue-600 hover:shadow-lg">
-                  Rent Now
+                <button 
+                  onClick={() => {
+                    addToCart(product, 'rental', rentalDays);
+                    setAddedToCart({ ...addedToCart, rental: true });
+                    toast.success('Added to cart!');
+                    setTimeout(() => setAddedToCart({ ...addedToCart, rental: false }), 2000);
+                  }}
+                  className="flex-1 py-4 text-xl text-white transition-all bg-blue-500 rounded-xl hover:bg-blue-600 hover:shadow-lg flex items-center justify-center gap-2"
+                >
+                  {addedToCart.rental ? <Check className="w-6 h-6" /> : <ShoppingCart className="w-6 h-6" />}
+                  {addedToCart.rental ? 'Added!' : 'Rent Now'}
                 </button>
               </div>
             ) : (
-              <button className={`w-full py-4 text-xl text-white transition-all rounded-xl hover:shadow-lg ${
-                product.listing_type === 'rent' 
-                  ? 'bg-blue-500 hover:bg-blue-600' 
-                  : 'bg-green-500 hover:bg-green-600'
-              }`}>
-                {product.listing_type === 'rent' ? 'Rent Now' : 'Buy Now'}
+              <button 
+                onClick={() => {
+                  const orderType = product.listing_type === 'rent' ? 'rental' : 'sale';
+                  addToCart(product, orderType, orderType === 'rental' ? rentalDays : 1);
+                  setAddedToCart({ ...addedToCart, [orderType]: true });
+                  toast.success('Added to cart!');
+                  setTimeout(() => setAddedToCart({ ...addedToCart, [orderType]: false }), 2000);
+                }}
+                className={`w-full py-4 text-xl text-white transition-all rounded-xl hover:shadow-lg flex items-center justify-center gap-2 ${
+                  product.listing_type === 'rent' 
+                    ? 'bg-blue-500 hover:bg-blue-600' 
+                    : 'bg-green-500 hover:bg-green-600'
+                }`}
+              >
+                {(product.listing_type === 'rent' ? addedToCart.rental : addedToCart.sale) 
+                  ? <Check className="w-6 h-6" /> 
+                  : <ShoppingCart className="w-6 h-6" />
+                }
+                {(product.listing_type === 'rent' ? addedToCart.rental : addedToCart.sale) 
+                  ? 'Added!' 
+                  : (product.listing_type === 'rent' ? 'Rent Now' : 'Buy Now')
+                }
               </button>
             )}
           </div>

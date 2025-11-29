@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProductStore } from '../store/productStore';
+import { useCartStore } from '../store/cartStore';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Loader } from 'lucide-react';
+import { Loader, ShoppingCart, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { products, fetchProducts, isLoading } = useProductStore();
+  const { addToCart } = useCartStore();
+  const [addedItems, setAddedItems] = useState({});
   
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('q') || '');
@@ -91,6 +95,19 @@ export default function SearchPage() {
       'fair': 'Fair'
     };
     return labels[condition] || condition;
+  };
+
+  const handleAddToCart = (e, product, orderType) => {
+    e.preventDefault(); // Prevent navigation
+    e.stopPropagation();
+    
+    addToCart(product, orderType, 1);
+    setAddedItems({ ...addedItems, [`${product.id}-${orderType}`]: true });
+    toast.success('Added to cart!');
+    
+    setTimeout(() => {
+      setAddedItems(prev => ({ ...prev, [`${product.id}-${orderType}`]: false }));
+    }, 2000);
   };
 
   return (
@@ -376,20 +393,38 @@ export default function SearchPage() {
                       </p>
                       {product.listing_type === 'both' ? (
                         <div className="flex gap-2">
-                          <button className="flex-1 py-2 text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600">
-                            Buy Now
+                          <button 
+                            onClick={(e) => handleAddToCart(e, product, 'sale')}
+                            className="flex-1 py-2 text-white transition-colors bg-green-500 rounded-lg hover:bg-green-600 flex items-center justify-center gap-1"
+                          >
+                            {addedItems[`${product.id}-sale`] ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                            {addedItems[`${product.id}-sale`] ? 'Added!' : 'Buy'}
                           </button>
-                          <button className="flex-1 py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600">
-                            Rent Now
+                          <button 
+                            onClick={(e) => handleAddToCart(e, product, 'rental')}
+                            className="flex-1 py-2 text-white transition-colors bg-blue-500 rounded-lg hover:bg-blue-600 flex items-center justify-center gap-1"
+                          >
+                            {addedItems[`${product.id}-rental`] ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+                            {addedItems[`${product.id}-rental`] ? 'Added!' : 'Rent'}
                           </button>
                         </div>
                       ) : (
-                        <button className={`w-full py-2 text-white transition-colors rounded-lg ${
-                          product.listing_type === 'rent' 
-                            ? 'bg-blue-500 hover:bg-blue-600' 
-                            : 'bg-green-500 hover:bg-green-600'
-                        }`}>
-                          {product.listing_type === 'rent' ? 'Rent Now' : 'Buy Now'}
+                        <button 
+                          onClick={(e) => handleAddToCart(e, product, product.listing_type === 'rent' ? 'rental' : 'sale')}
+                          className={`w-full py-2 text-white transition-colors rounded-lg flex items-center justify-center gap-1 ${
+                            product.listing_type === 'rent' 
+                              ? 'bg-blue-500 hover:bg-blue-600' 
+                              : 'bg-green-500 hover:bg-green-600'
+                          }`}
+                        >
+                          {addedItems[`${product.id}-${product.listing_type === 'rent' ? 'rental' : 'sale'}`] 
+                            ? <Check className="w-4 h-4" /> 
+                            : <ShoppingCart className="w-4 h-4" />
+                          }
+                          {addedItems[`${product.id}-${product.listing_type === 'rent' ? 'rental' : 'sale'}`] 
+                            ? 'Added!' 
+                            : (product.listing_type === 'rent' ? 'Rent Now' : 'Buy Now')
+                          }
                         </button>
                       )}
                     </div>

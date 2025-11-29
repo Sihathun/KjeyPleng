@@ -215,28 +215,6 @@ export const resetPassword = async (req, res) => {
     }
 }
 
-export const checkAuth = async (req, res) => {
-    try {
-        const user = await sql`
-            SELECT * FROM userschema WHERE id=${req.userId} LIMIT 1
-        `;
-
-        if (user.length === 0) {
-            return res.status(400).json({ success: false, message: "User not found"});
-        }
-
-        res.status(200).json({success: true, user: {
-            ...user[0],
-            password: undefined
-        }});
-
-    } catch (error) {
-        console.log("Error in checkAuth", error);
-        res.status(400).json({ success: false, message: error.message });
-        
-    }
-}
-
 export const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     
@@ -283,6 +261,30 @@ export const changePassword = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 }
+
+export const checkAuth = async (req, res) => {
+    try {
+        const user = await sql`
+            SELECT * FROM userschema WHERE id=${req.userId} LIMIT 1
+        `;
+
+        if (user.length === 0) {
+            return res.status(400).json({ success: false, message: "User not found"});
+        }
+
+        res.status(200).json({success: true, user: {
+            ...user[0],
+            password: undefined
+        }});
+
+    } catch (error) {
+        console.log("Error in checkAuth", error);
+        res.status(400).json({ success: false, message: error.message });
+        
+    }
+}
+
+
 
 export const updateProfilePicture = async (req, res) => {
     try {

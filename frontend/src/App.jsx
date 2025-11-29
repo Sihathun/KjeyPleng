@@ -16,6 +16,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import ListInstrumentPage from "./pages/ListInstrumentPage";
+import CartPage from "./pages/CartPage";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
@@ -96,6 +97,7 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/product/:id" element={<ProductPage />} />
+        <Route path="/cart" element={<CartPage />} />
         <Route
           path="/list-instrument"
           element={
