@@ -156,7 +156,8 @@ async function initDB() {
                 shipping_address TEXT,
                 notes TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                payment_method VARCHAR(50) DEFAULT 'cod'
             )
         `;
 

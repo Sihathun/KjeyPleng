@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Calendar } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft, Calendar, Lock, ShieldCheck, RotateCcw, CreditCard, Banknote } from 'lucide-react';
 import toast from 'react-hot-toast';
+import axios from 'axios';
+
+axios.defaults.withCredentials = true;
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, updateRentalDays, getCartTotal, clearCart } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' or 'stripe'
 
   const formatPrice = (price) => {
     return `$${parseFloat(price).toFixed(2)}`;
@@ -31,16 +35,35 @@ export default function CartPage() {
 
     setIsProcessing(true);
     
-    // Simulate checkout process
     try {
-      // Here you would integrate with a payment gateway
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast.success('Order placed successfully!');
-      clearCart();
-      navigate('/');
+      // Prepare order items for the API
+      const orderItems = items.map(item => ({
+        productId: item.product.id,
+        orderType: item.orderType,
+        quantity: item.quantity,
+        rentalDays: item.rentalDays || 1,
+        totalPrice: item.orderType === 'rental' 
+          ? parseFloat(item.product.rental_price) * item.rentalDays * item.quantity
+          : parseFloat(item.product.sale_price) * item.quantity
+      }));
+
+      // Call the checkout API
+      const response = await axios.post('/api/products/checkout', {
+        items: orderItems,
+        paymentMethod: paymentMethod,
+        shippingAddress: '' // Can be extended to collect address
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message || 'Order placed successfully!');
+        clearCart();
+        navigate('/');
+      } else {
+        toast.error(response.data.message || 'Checkout failed');
+      }
     } catch (error) {
-      toast.error('Checkout failed. Please try again.');
+      console.error('Checkout error:', error);
+      toast.error(error.response?.data?.message || 'Checkout failed. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -56,7 +79,7 @@ export default function CartPage() {
             <p className="text-gray-600 mb-8">Looks like you haven't added any instruments yet.</p>
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors text-lg"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-lg"
             >
               <ArrowLeft className="w-5 h-5" />
               Browse Instruments
@@ -132,7 +155,7 @@ export default function CartPage() {
                       ? 'bg-blue-100 text-blue-700'
                       : 'bg-green-100 text-green-700'
                   }`}>
-                    {item.orderType === 'rental' ? '🔄 Rent' : '💰 Buy'}
+                    {item.orderType === 'rental' ? 'Rent' : 'Buy'}
                   </span>
                 </div>
 
@@ -162,20 +185,10 @@ export default function CartPage() {
                       </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-2">
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center font-medium">{item.quantity}</span>
-                      <button
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="p-1 hover:bg-gray-100 rounded transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                    <div className="flex items-center justify-center">
+                      <span className="px-4 py-1 bg-gray-100 border border-gray-300 rounded-lg font-medium text-gray-600">
+                        1
+                      </span>
                     </div>
                   )}
                 </div>
@@ -236,10 +249,59 @@ export default function CartPage() {
                 <span className="text-2xl font-bold text-green-600">{formatPrice(getCartTotal())}</span>
               </div>
 
+              {/* Payment Method Selection */}
+              <div className="py-6 border-b border-gray-200">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Payment Method</h3>
+                <div className="space-y-2">
+                  <label 
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      paymentMethod === 'cod' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={paymentMethod === 'cod'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-4 h-4 text-blue-500"
+                    />
+                    <Banknote className="w-5 h-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-sm">Cash on Delivery</p>
+                      <p className="text-xs text-gray-500">Pay when you receive</p>
+                    </div>
+                  </label>
+                  <label 
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      paymentMethod === 'stripe' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="stripe"
+                      checked={paymentMethod === 'stripe'}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-4 h-4 text-blue-500"
+                    />
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-sm">Pay with Card</p>
+                      <p className="text-xs text-gray-500">Secure payment via Stripe</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <button
                 onClick={handleCheckout}
                 disabled={isProcessing}
-                className="w-full mt-6 py-4 bg-orange-500 text-white text-lg font-semibold rounded-xl hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-6 py-4 bg-blue-500 text-white text-lg font-semibold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isProcessing ? (
                   <span className="flex items-center justify-center gap-2">
@@ -247,31 +309,31 @@ export default function CartPage() {
                     Processing...
                   </span>
                 ) : (
-                  'Proceed to Checkout'
+                  paymentMethod === 'cod' ? 'Place Order' : 'Pay Now'
                 )}
               </button>
 
               <p className="text-center text-sm text-gray-500 mt-4">
-                Secure checkout powered by Stripe
+                {paymentMethod === 'stripe' ? 'Secure checkout powered by Stripe' : 'Pay cash when your order arrives'}
               </p>
 
               {/* Trust Badges */}
               <div className="flex justify-center gap-4 mt-6 pt-6 border-t border-gray-200">
                 <div className="text-center">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                    <span className="text-lg">🔒</span>
+                    <Lock className="w-5 h-5 text-blue-600" />
                   </div>
                   <span className="text-xs text-gray-500">Secure</span>
                 </div>
                 <div className="text-center">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                    <span className="text-lg">✓</span>
+                    <ShieldCheck className="w-5 h-5 text-green-600" />
                   </div>
                   <span className="text-xs text-gray-500">Verified</span>
                 </div>
                 <div className="text-center">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-1">
-                    <span className="text-lg">↩️</span>
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-1">
+                    <RotateCcw className="w-5 h-5 text-blue-600" />
                   </div>
                   <span className="text-xs text-gray-500">Returns</span>
                 </div>

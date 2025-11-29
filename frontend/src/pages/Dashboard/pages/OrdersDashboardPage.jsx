@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useProductStore } from '../../../store/productStore';
-import { Loader, Package, AlertCircle, ShoppingBag, Calendar, Clock, DollarSign, User } from 'lucide-react';
+import { Loader, Package, AlertCircle, ShoppingBag, Calendar, Clock, DollarSign, User, CreditCard, Banknote } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function OrdersDashboardPage() {
@@ -201,9 +201,6 @@ export default function OrdersDashboardPage() {
                   <div className="col-span-2">
                     <p className="text-sm font-medium">Customer</p>
                   </div>
-                  <div className="col-span-1">
-                    <p className="text-sm font-medium">Product ID</p>
-                  </div>
                   <div className="col-span-2">
                     <p className="text-sm font-medium">Product</p>
                   </div>
@@ -212,6 +209,9 @@ export default function OrdersDashboardPage() {
                   </div>
                   <div className="col-span-1">
                     <p className="text-sm font-medium">Amount</p>
+                  </div>
+                  <div className="col-span-1">
+                    <p className="text-sm font-medium">Payment</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-sm font-medium">Date</p>
@@ -255,13 +255,6 @@ export default function OrdersDashboardPage() {
                       </div>
                     </div>
 
-                    {/* Product ID */}
-                    <div className="col-span-1">
-                      <div className="inline-flex items-center justify-center bg-blue-50 text-blue-700 rounded px-2 py-1">
-                        <p className="text-xs font-mono">P-{order.instrument_id}</p>
-                      </div>
-                    </div>
-
                     {/* Product */}
                     <div className="col-span-2">
                       <div className="flex items-center gap-2">
@@ -282,7 +275,7 @@ export default function OrdersDashboardPage() {
                     {/* Order Type */}
                     <div className="col-span-1">
                       <span className={`inline-block px-2 py-1 text-xs rounded-full capitalize ${getOrderTypeColor(order.order_type)}`}>
-                        {order.order_type === 'rental' ? '🔄 Rent' : '💰 Sale'}
+                        {order.order_type === 'rental' ? 'Rent' : 'Sale'}
                       </span>
                     </div>
 
@@ -292,6 +285,23 @@ export default function OrdersDashboardPage() {
                       {order.quantity > 1 && (
                         <p className="text-xs text-gray-500">x{order.quantity}</p>
                       )}
+                    </div>
+
+                    {/* Payment Method */}
+                    <div className="col-span-1">
+                      <div className="flex items-center gap-1">
+                        {order.payment_method === 'cod' ? (
+                          <>
+                            <Banknote className="w-4 h-4 text-green-600" />
+                            <span className="text-xs text-gray-600">COD</span>
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-4 h-4 text-blue-600" />
+                            <span className="text-xs text-gray-600">Card</span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     {/* Date */}

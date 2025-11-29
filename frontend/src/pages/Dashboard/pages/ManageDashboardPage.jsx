@@ -204,9 +204,15 @@ export default function ManageProductPage() {
 
                     {/* Status */}
                     <div className="col-span-1">
-                      <span className={`inline-block w-3 h-3 rounded-full ${
-                        product.is_available && !expirationStatus.isExpired ? 'bg-green-500' : 'bg-gray-400'
-                      }`} title={product.is_available && !expirationStatus.isExpired ? 'Listed' : 'Hidden'}></span>
+                      {product.is_sold ? (
+                        <span className="inline-block px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 font-medium">
+                          Sold
+                        </span>
+                      ) : (
+                        <span className={`inline-block w-3 h-3 rounded-full ${
+                          product.is_available && !expirationStatus.isExpired ? 'bg-green-500' : 'bg-gray-400'
+                        }`} title={product.is_available && !expirationStatus.isExpired ? 'Listed' : 'Hidden'}></span>
+                      )}
                     </div>
 
                     {/* Expiration */}
@@ -221,9 +227,13 @@ export default function ManageProductPage() {
                     <div className="col-span-2 flex gap-1">
                       <button
                         onClick={() => handleRenew(product.id)}
-                        disabled={renewingId === product.id}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
-                        title="Renew for 3 days"
+                        disabled={renewingId === product.id || product.is_sold}
+                        className={`p-2 rounded-md transition-colors ${
+                          product.is_sold 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : 'text-green-600 hover:bg-green-50 disabled:opacity-50'
+                        }`}
+                        title={product.is_sold ? 'Cannot renew - product has been sold' : 'Renew for 3 days'}
                       >
                         <RefreshCw className={`w-4 h-4 ${renewingId === product.id ? 'animate-spin' : ''}`} />
                       </button>
@@ -236,8 +246,13 @@ export default function ManageProductPage() {
                       </button>
                       <button
                         onClick={() => handleToggleAvailability(product)}
-                        className="p-2 text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
-                        title={product.is_available ? 'Hide listing' : 'Show listing'}
+                        className={`p-2 rounded-md transition-colors ${
+                          product.is_sold 
+                            ? 'text-gray-300 cursor-not-allowed' 
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }`}
+                        title={product.is_sold ? 'Cannot change - product has been sold' : (product.is_available ? 'Hide listing' : 'Show listing')}
+                        disabled={product.is_sold}
                       >
                         {product.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>

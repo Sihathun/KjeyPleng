@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, User, LogOut, ChevronDown, Settings } from 'lucide-react';
+import { ShoppingCart, Search, User, LogOut, ChevronDown, Settings, Package } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import toast from 'react-hot-toast';
@@ -136,6 +136,15 @@ export default function Navbar() {
                 >
                   <Settings className="w-4 h-4" />
                   <span>Account Settings</span>
+                </Link>
+
+                <Link
+                  to="/my-orders"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <Package className="w-4 h-4" />
+                  <span>Your Orders</span>
                 </Link>
 
                 <Link

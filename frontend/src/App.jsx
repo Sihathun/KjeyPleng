@@ -17,6 +17,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import ListInstrumentPage from "./pages/ListInstrumentPage";
 import CartPage from "./pages/CartPage";
+import UserOrdersPage from "./pages/UserOrdersPage";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
@@ -98,6 +99,14 @@ function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route
+          path="/my-orders"
+          element={
+            <ProtectedRoute>
+              <UserOrdersPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/list-instrument"
           element={

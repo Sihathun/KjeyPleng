@@ -9,6 +9,7 @@ export const useProductStore = create((set, get) => ({
   products: [],
   myListings: [],
   sellerOrders: [],
+  buyerOrders: [],
   currentProduct: null,
   categories: [],
   dashboardStats: null,
@@ -218,6 +219,22 @@ export const useProductStore = create((set, get) => ({
     } catch (error) {
       set({
         error: error.response?.data?.message || "Error fetching orders",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
+  // Fetch buyer's orders (orders where current user is the buyer)
+  fetchBuyerOrders: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.get(`${API_URL}/my/purchases`);
+      set({ buyerOrders: response.data.data, isLoading: false });
+      return response.data.data;
+    } catch (error) {
+      set({
+        error: error.response?.data?.message || "Error fetching your orders",
         isLoading: false,
       });
       throw error;

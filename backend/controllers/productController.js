@@ -185,6 +185,33 @@ export const updateProduct = async (req, res) => {
             return res.status(403).json({ success: false, message: "You can only update your own listings" });
         }
 
+        // Check if trying to make product available again
+        if (is_available === true) {
+            // Check if there are any completed orders for this product
+            const completedOrders = await sql`
+                SELECT id FROM orders 
+                WHERE instrument_id = ${id} AND status = 'completed'
+                LIMIT 1
+            `;
+
+            if (completedOrders.length > 0) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "This product has been sold and cannot be listed again" 
+                });
+            }
+
+            // Also check for completed rentals (if applicable)
+            const completedRentals = await sql`
+                SELECT id FROM rentals 
+                WHERE instrument_id = ${id} AND status = 'completed'
+                LIMIT 1
+            `;
+
+            // For rentals, we might want to allow re-listing after rental is complete
+            // But for sales, once completed, the item is sold
+        }
+
         const updatedProduct = await sql`
             UPDATE instruments
             SET 
@@ -262,9 +289,15 @@ export const getMyListings = async (req, res) => {
         `;
 
         const listings = await sql`
-            SELECT * FROM instruments 
-            WHERE user_id = ${userId}
-            ORDER BY created_at DESC
+            SELECT 
+                i.*,
+                CASE WHEN EXISTS (
+                    SELECT 1 FROM orders o 
+                    WHERE o.instrument_id = i.id AND o.status = 'completed'
+                ) THEN true ELSE false END as is_sold
+            FROM instruments i
+            WHERE i.user_id = ${userId}
+            ORDER BY i.created_at DESC
         `;
 
         res.status(200).json({ success: true, data: listings });
@@ -519,6 +552,7 @@ export const getSellerOrders = async (req, res) => {
                 o.total_price,
                 o.status,
                 o.payment_status,
+                o.payment_method,
                 o.shipping_address,
                 o.notes,
                 o.created_at,
@@ -546,6 +580,7 @@ export const getSellerOrders = async (req, res) => {
                 r.total_price,
                 r.status,
                 'completed' as payment_status,
+                'stripe' as payment_method,
                 NULL as shipping_address,
                 NULL as notes,
                 r.created_at,
@@ -576,11 +611,93 @@ export const getSellerOrders = async (req, res) => {
     }
 };
 
+// Get orders for the buyer/renter (their purchases and rentals)
+export const getBuyerOrders = async (req, res) => {
+    const userId = req.userId;
+
+    try {
+        // Get all orders where the user is the buyer
+        const orders = await sql`
+            SELECT 
+                o.id,
+                o.instrument_id,
+                o.order_type,
+                o.quantity,
+                o.unit_price,
+                o.total_price,
+                o.status,
+                o.payment_status,
+                o.payment_method,
+                o.shipping_address,
+                o.notes,
+                o.created_at,
+                i.name as product_name,
+                i.image as product_image,
+                i.category as product_category,
+                i.brand as product_brand,
+                u.name as seller_name,
+                u.email as seller_email,
+                u.profile_picture as seller_profile_picture
+            FROM orders o
+            JOIN instruments i ON o.instrument_id = i.id
+            JOIN userschema u ON o.seller_id = u.id
+            WHERE o.buyer_id = ${userId}
+            ORDER BY o.created_at DESC
+        `;
+
+        // Also get rentals where user is the renter
+        const rentals = await sql`
+            SELECT 
+                r.id,
+                r.instrument_id,
+                'rental' as order_type,
+                1 as quantity,
+                r.total_price as unit_price,
+                r.total_price,
+                r.status,
+                'completed' as payment_status,
+                'stripe' as payment_method,
+                NULL as shipping_address,
+                NULL as notes,
+                r.created_at,
+                r.start_date,
+                r.end_date,
+                i.name as product_name,
+                i.image as product_image,
+                i.category as product_category,
+                i.brand as product_brand,
+                u.name as seller_name,
+                u.email as seller_email,
+                u.profile_picture as seller_profile_picture
+            FROM rentals r
+            JOIN instruments i ON r.instrument_id = i.id
+            JOIN userschema u ON r.owner_id = u.id
+            WHERE r.renter_id = ${userId}
+            ORDER BY r.created_at DESC
+        `;
+
+        // Combine and sort by date
+        const allOrders = [...orders, ...rentals].sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+        );
+
+        res.status(200).json({ success: true, data: allOrders });
+    } catch (error) {
+        console.log("Error getBuyerOrders", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
 // Update order status (authenticated - only seller can update)
 export const updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status, type } = req.body; // type can be 'order' or 'rental'
     const userId = req.userId;
+
+    // Statuses that should hide the product from listings
+    const hideProductStatuses = ['processing', 'shipped', 'completed'];
+    // Statuses that should show the product again
+    const showProductStatuses = ['pending', 'cancelled'];
 
     try {
         if (type === 'rental') {
@@ -600,6 +717,22 @@ export const updateOrderStatus = async (req, res) => {
                 RETURNING *
             `;
 
+            // Update product availability based on rental status
+            const instrumentId = existingRental[0].instrument_id;
+            if (hideProductStatuses.includes(status.toLowerCase())) {
+                await sql`
+                    UPDATE instruments 
+                    SET is_available = FALSE, updated_at = NOW() 
+                    WHERE id = ${instrumentId}
+                `;
+            } else if (showProductStatuses.includes(status.toLowerCase())) {
+                await sql`
+                    UPDATE instruments 
+                    SET is_available = TRUE, updated_at = NOW() 
+                    WHERE id = ${instrumentId}
+                `;
+            }
+
             res.status(200).json({ success: true, data: updatedRental[0] });
         } else {
             // Check if order exists and belongs to user
@@ -618,10 +751,101 @@ export const updateOrderStatus = async (req, res) => {
                 RETURNING *
             `;
 
+            // Update product availability based on order status
+            const instrumentId = existingOrder[0].instrument_id;
+            if (hideProductStatuses.includes(status.toLowerCase())) {
+                await sql`
+                    UPDATE instruments 
+                    SET is_available = FALSE, updated_at = NOW() 
+                    WHERE id = ${instrumentId}
+                `;
+            } else if (showProductStatuses.includes(status.toLowerCase())) {
+                await sql`
+                    UPDATE instruments 
+                    SET is_available = TRUE, updated_at = NOW() 
+                    WHERE id = ${instrumentId}
+                `;
+            }
+
             res.status(200).json({ success: true, data: updatedOrder[0] });
         }
     } catch (error) {
         console.log("Error updateOrderStatus", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// Create order(s) from cart checkout (authenticated)
+export const createOrder = async (req, res) => {
+    const userId = req.userId;
+    const { items, paymentMethod, shippingAddress } = req.body;
+
+    try {
+        if (!items || items.length === 0) {
+            return res.status(400).json({ success: false, message: "No items provided" });
+        }
+
+        const createdOrders = [];
+
+        for (const item of items) {
+            const { productId, orderType, quantity, rentalDays, totalPrice } = item;
+
+            // Get the product to find the seller
+            const product = await sql`
+                SELECT * FROM instruments WHERE id = ${productId}
+            `;
+
+            if (product.length === 0) {
+                continue; // Skip if product not found
+            }
+
+            const sellerId = product[0].user_id;
+            const unitPrice = orderType === 'rental' 
+                ? parseFloat(product[0].rental_price) 
+                : parseFloat(product[0].sale_price);
+
+            if (orderType === 'rental') {
+                // Create rental record
+                const startDate = new Date();
+                const endDate = new Date();
+                endDate.setDate(endDate.getDate() + rentalDays);
+
+                const rental = await sql`
+                    INSERT INTO rentals (
+                        instrument_id, renter_id, owner_id, 
+                        start_date, end_date, total_price, status
+                    ) VALUES (
+                        ${productId}, ${userId}, ${sellerId},
+                        ${startDate}, ${endDate}, ${totalPrice}, 'pending'
+                    )
+                    RETURNING *
+                `;
+                createdOrders.push({ type: 'rental', data: rental[0] });
+            } else {
+                // Create order record
+                const order = await sql`
+                    INSERT INTO orders (
+                        instrument_id, buyer_id, seller_id, order_type,
+                        quantity, unit_price, total_price, status, 
+                        payment_status, payment_method, shipping_address
+                    ) VALUES (
+                        ${productId}, ${userId}, ${sellerId}, 'sale',
+                        ${quantity}, ${unitPrice}, ${totalPrice}, 'pending',
+                        ${paymentMethod === 'cod' ? 'pending' : 'paid'}, ${paymentMethod || 'cod'}, ${shippingAddress || ''}
+                    )
+                    RETURNING *
+                `;
+                createdOrders.push({ type: 'order', data: order[0] });
+            }
+        }
+
+        res.status(201).json({ 
+            success: true, 
+            message: `${createdOrders.length} order(s) placed successfully`,
+            data: createdOrders 
+        });
+    } catch (error) {
+        console.log("Error createOrder", error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };

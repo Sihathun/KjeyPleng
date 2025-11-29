@@ -12,7 +12,9 @@ import {
     getDashboardStats,
     renewListing,
     getSellerOrders,
-    updateOrderStatus
+    getBuyerOrders,
+    updateOrderStatus,
+    createOrder
 } from "../controllers/productController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import upload from "../middleware/upload.js";
@@ -26,10 +28,12 @@ router.get("/categories", getCategories);
 // Protected routes - must come before /:id to avoid conflicts
 router.get("/my/listings", verifyToken, getMyListings);
 router.get("/my/orders", verifyToken, getSellerOrders);
+router.get("/my/purchases", verifyToken, getBuyerOrders);
 router.get("/dashboard/stats", verifyToken, getDashboardStats);
 router.post("/", verifyToken, upload.array('images', 5), createProduct);
 router.post("/upload", verifyToken, upload.array('images', 5), uploadProductImages);
 router.post("/renew/:id", verifyToken, renewListing);
+router.post("/checkout", verifyToken, createOrder);
 router.put("/orders/:id/status", verifyToken, updateOrderStatus);
 
 // Public routes with params
