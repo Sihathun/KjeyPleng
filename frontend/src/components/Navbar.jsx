@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, User, LogOut, ChevronDown, Settings, Package } from 'lucide-react';
+import { ShoppingCart, Search, User, LogOut, ChevronDown, Settings, Package, Crown, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 export default function Navbar() {
@@ -10,9 +11,27 @@ export default function Navbar() {
   const { getItemCount } = useCartStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isPremium, setIsPremium] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const cartItemCount = getItemCount();
+
+  // Fetch subscription status
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      if (isAuthenticated) {
+        try {
+          const response = await axios.get('/api/subscription/status');
+          setIsPremium(response.data.subscription?.isPremium || false);
+        } catch (error) {
+          console.error('Error fetching subscription:', error);
+        }
+      } else {
+        setIsPremium(false);
+      }
+    };
+    fetchSubscription();
+  }, [isAuthenticated]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -53,9 +72,23 @@ export default function Navbar() {
           <Link to="/" className="text-black hover:opacity-75 transition-opacity">
             Home
           </Link>
-          <Link to="/search" className="text-black hover:opacity-75 transition-opacity">
-            Products
-          </Link>
+          {isPremium ? (
+            <Link 
+              to="/subscribe" 
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full font-medium hover:from-yellow-500 hover:to-yellow-600 transition-all shadow-sm"
+            >
+              <Crown className="w-4 h-4" />
+              Your Plan
+            </Link>
+          ) : (
+            <Link 
+              to="/subscribe" 
+              className="group flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-medium hover:from-blue-600 hover:to-purple-600 transition-all shadow-sm hover:shadow-md"
+            >
+              <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+              Subscribe
+            </Link>
+          )}
           <Link to="/dashboard" className="text-black hover:opacity-75 transition-opacity">
             Dashboard
           </Link>
