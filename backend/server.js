@@ -5,13 +5,24 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
+dotenv.config();
+
 import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import {sql} from "./config/db.js";
-import {aj} from "./lib/arcjet.js";
 
-dotenv.config();
+// Conditionally import Arcjet only if key is available
+let aj = null;
+if (process.env.ARCJET_KEY) {
+    try {
+        const arcjetModule = await import("./lib/arcjet.js");
+        aj = arcjetModule.aj;
+        console.log("Arcjet loaded successfully");
+    } catch (error) {
+        console.log("Arcjet not loaded:", error.message);
+    }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,8 +63,13 @@ const excludedFromRateLimit = [
     '/api/products/categories',
 ];
 
-// Apply arcjet rate-limit to all routes except excluded ones
+// Apply arcjet rate-limit to all routes except excluded ones (only if Arcjet is configured)
 app.use(async (req, res, next) => {
+    // Skip rate limiting if Arcjet is not configured
+    if (!aj) {
+        return next();
+    }
+    
     // Skip rate limiting for excluded endpoints
     if (excludedFromRateLimit.some(path => req.path === path || req.path.startsWith(path + '/'))) {
         return next();
@@ -86,13 +102,19 @@ app.use(async (req, res, next) => {
         next();
     } catch (error) {
         console.log("Arcjet error", error);
-        next(error);
+        // Continue without rate limiting if Arcjet fails
+        next();
     }
 })
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
 // initializing database
 async function initDB() {
@@ -186,17 +208,28 @@ async function initDB() {
         console.log("Database initialized successfully")
     } catch (error) {
         console.log("Error initializing DB", error);
+        // Don't crash the server, just log the error
     }
 }
 
-// Initialize database
-initDB();
+// Initialize database (don't await in serverless)
+let dbInitialized = false;
+const initPromise = initDB().then(() => {
+    dbInitialized = true;
+}).catch((err) => {
+    console.log("DB init failed:", err);
+});
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => {
-        console.log(`Server running at http://localhost:${PORT}`);
+    initPromise.then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server running at http://localhost:${PORT}`);
+        });
     });
+} else {
+    // In production/serverless, just initialize without blocking
+    initPromise;
 }
 
 // Export for Vercel serverless functions
