@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, X, Crown, Loader } from "lucide-react";
+import { Check, X, Crown, Loader, AlertTriangle } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../store/authStore";
@@ -8,6 +8,8 @@ import { useAuthStore } from "../store/authStore";
 export default function SubscriptionPage() {
   const [subscription, setSubscription] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDowngrading, setIsDowngrading] = useState(false);
+  const [showDowngradeModal, setShowDowngradeModal] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
 
@@ -37,6 +39,31 @@ export default function SubscriptionPage() {
       return;
     }
     navigate("/subscribe/checkout");
+  };
+
+  const handleDowngrade = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please sign in first");
+      navigate("/sign-in");
+      return;
+    }
+    setShowDowngradeModal(true);
+  };
+
+  const confirmDowngrade = async () => {
+    setIsDowngrading(true);
+    try {
+      const response = await axios.post("/api/subscription/downgrade");
+      if (response.data.success) {
+        toast.success("Successfully downgraded to Free Plan");
+        setSubscription(response.data.subscription);
+        setShowDowngradeModal(false);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to downgrade");
+    } finally {
+      setIsDowngrading(false);
+    }
   };
 
   if (isLoading) {
@@ -127,16 +154,29 @@ export default function SubscriptionPage() {
 
               {/* Button */}
               <div className="flex justify-center">
-                <button 
-                  className={`px-10 py-2.5 rounded-full transition-colors ${
-                    !isPremium 
-                      ? 'bg-gray-700 text-white cursor-default' 
-                      : 'bg-gray-300 text-gray-600 cursor-default'
-                  }`}
-                  disabled
-                >
-                  {!isPremium ? 'Current Plan' : 'Free Plan'}
-                </button>
+                {isPremium ? (
+                  <button 
+                    onClick={handleDowngrade}
+                    disabled={isDowngrading}
+                    className="px-10 py-2.5 rounded-full transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isDowngrading ? (
+                      <span className="flex items-center gap-2">
+                        <Loader className="w-4 h-4 animate-spin" />
+                        Downgrading...
+                      </span>
+                    ) : (
+                      'Downgrade'
+                    )}
+                  </button>
+                ) : (
+                  <button 
+                    className="px-10 py-2.5 rounded-full bg-gray-700 text-white cursor-default"
+                    disabled
+                  >
+                    Current Plan
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -144,7 +184,7 @@ export default function SubscriptionPage() {
           {/* Premium Plan Card */}
           <div className={`bg-white rounded-3xl shadow-lg overflow-hidden ${isPremium ? 'ring-2 ring-yellow-500' : ''}`}>
             {/* Card Header */}
-            <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 p-6 h-28 rounded-t-3xl relative">
+            <div className="bg-linear-to-r from-yellow-400 to-yellow-500 p-6 h-28 rounded-t-3xl relative">
               <div className="flex items-center gap-2">
                 <Crown className="w-5 h-5 text-yellow-800" />
                 <p className="text-lg font-medium text-yellow-900">Premium Member</p>
@@ -228,6 +268,98 @@ export default function SubscriptionPage() {
           <p className="mt-1">All existing listings will be extended to 7 days.</p>
         </div>
       </div>
+
+      {/* Downgrade Confirmation Modal */}
+      {showDowngradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => !isDowngrading && setShowDowngradeModal(false)}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-yellow-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Downgrade to Free Plan</h3>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-5">
+              <p className="text-gray-700 mb-4">
+                Are you sure you want to downgrade? You will lose the following benefits:
+              </p>
+              
+              <div className="space-y-3 bg-gray-50 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 mt-0.5 text-red-500 shrink-0">
+                    <X className="w-full h-full" />
+                  </div>
+                  <p className="text-gray-600">Listing limit will decrease from <span className="font-medium">8</span> to <span className="font-medium">3</span></p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 mt-0.5 text-red-500 shrink-0">
+                    <X className="w-full h-full" />
+                  </div>
+                  <p className="text-gray-600">Listings will expire after <span className="font-medium">3 days</span> instead of 7</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 mt-0.5 text-red-500 shrink-0">
+                    <X className="w-full h-full" />
+                  </div>
+                  <p className="text-gray-600">You will lose <span className="font-medium">priority placement</span> in search results</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 mt-0.5 text-red-500 shrink-0">
+                    <X className="w-full h-full" />
+                  </div>
+                  <p className="text-gray-600">You will lose the <span className="font-medium">featured seller badge</span></p>
+                </div>
+              </div>
+
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <span className="font-medium">Note:</span> No refund will be provided for any remaining subscription time.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDowngradeModal(false)}
+                disabled={isDowngrading}
+                className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDowngrade}
+                disabled={isDowngrading}
+                className="px-5 py-2.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+              >
+                {isDowngrading ? (
+                  <>
+                    <Loader className="w-4 h-4 animate-spin" />
+                    Downgrading...
+                  </>
+                ) : (
+                  'Yes, Downgrade'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
