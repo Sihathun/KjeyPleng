@@ -277,5 +277,81 @@ export const canCreateListing = async (req, res) => {
     }
 };
 
+// Downgrade to free plan (immediate cancellation)
+export const downgradeToFree = async (req, res) => {
+    try {
+        const user = await sql`
+            SELECT id, is_premium, subscription_expires_at
+            FROM userschema
+            WHERE id = ${req.userId}
+            LIMIT 1
+        `;
+
+        if (user.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        if (!user[0].is_premium) {
+            return res.status(400).json({ success: false, message: "You are already on the free plan" });
+        }
+
+        // Downgrade user to free plan immediately
+        const updatedUser = await sql`
+            UPDATE userschema
+            SET 
+                is_premium = FALSE,
+                subscription_expires_at = NULL,
+                updated_at = NOW()
+            WHERE id = ${req.userId}
+            RETURNING *
+        `;
+
+        // Update all existing active listings to have 3-day expiry from now
+        await sql`
+            UPDATE instruments
+            SET 
+                expires_at = NOW() + INTERVAL '3 days',
+                updated_at = NOW()
+            WHERE user_id = ${req.userId}
+                AND is_available = TRUE
+                AND (expires_at IS NULL OR expires_at > NOW())
+        `;
+
+        // Get updated listing count
+        const listingCount = await sql`
+            SELECT COUNT(*) as count
+            FROM instruments
+            WHERE user_id = ${req.userId}
+                AND is_available = TRUE
+                AND (expires_at IS NULL OR expires_at > NOW())
+                AND NOT EXISTS (
+                    SELECT 1 FROM orders o 
+                    WHERE o.instrument_id = instruments.id AND o.status = 'completed'
+                )
+        `;
+
+        res.status(200).json({
+            success: true,
+            message: "Successfully downgraded to Free Plan. Your listings now expire after 3 days.",
+            subscription: {
+                plan: 'free',
+                isPremium: false,
+                expiresAt: null,
+                currentListings: parseInt(listingCount[0].count),
+                maxListings: SUBSCRIPTION_PLANS.free.maxListings,
+                listingDuration: SUBSCRIPTION_PLANS.free.listingDuration,
+                hasFeaturedPlacement: SUBSCRIPTION_PLANS.free.hasFeaturedPlacement
+            },
+            user: {
+                ...updatedUser[0],
+                password: undefined
+            }
+        });
+    } catch (error) {
+        console.log("Error downgradeToFree", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
 // Export subscription plans for use in other controllers
 export { SUBSCRIPTION_PLANS };
