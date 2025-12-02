@@ -1,6 +1,7 @@
-import { ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronRight, Loader, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import svgPaths from "../imports/svg-8vu20olhr3";
+import axios from "axios";
 
 const imgElectricGuitar = "/images/imgElectricGuitar.png";
 const imgViolin = "/images/imgViolin.png";
@@ -12,6 +13,9 @@ const imgWindInstruments = "/images/windinstruments.jpg";
 const imgPianoCategory = "/images/piano.jpg";
 
 export default function HomePage() {
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const categories = [
     { name: "Guitars", image: imgGuitar, category: "guitars" },
     { name: "Pianos", image: imgPianoCategory, category: "pianos" },
@@ -20,44 +24,30 @@ export default function HomePage() {
     { name: "Wind Instruments", image: imgWindInstruments, category: "winds" },
   ];
 
-  const products = [
-    {
-      id: 1,
-      title: "YAMAHA Rasengan Limited Edit..",
-      price: "$100.50",
-      image: imgElectricGuitar
-    },
-    {
-      id: 2,
-      title: "YAMAHA Rasengan Limited Edit..",
-      price: "$100.50",
-      image: imgElectricGuitar
-    },
-    {
-      id: 3,
-      title: "YAMAHA Rasengan Limited Edit..",
-      price: "$100.50",
-      image: imgElectricGuitar
-    },
-    {
-      id: 4,
-      title: "YAMAHA Rasengan Limited Edit..",
-      price: "$100.50",
-      image: imgElectricGuitar
-    },
-    {
-      id: 5,
-      title: "YAMAHA Rasengan Limited Edit..",
-      price: "$100.50",
-      image: imgElectricGuitar
-    },
-    {
-      id: 6,
-      title: "YAMAHA Rasengan Limited Edit..",
-      price: "$100.50",
-      image: imgElectricGuitar
+  useEffect(() => {
+    fetchFeaturedProducts();
+  }, []);
+
+  const fetchFeaturedProducts = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get("/api/products/featured");
+      setFeaturedProducts(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching featured products:", error);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  const formatPrice = (product) => {
+    if (product.listing_type === 'rent') {
+      return `$${parseFloat(product.rental_price).toFixed(2)}/${product.rental_period || 'day'}`;
+    } else if (product.listing_type === 'both') {
+      return `$${parseFloat(product.sale_price).toFixed(2)}`;
+    }
+    return `$${parseFloat(product.sale_price).toFixed(2)}`;
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -136,34 +126,66 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Popular Deals */}
+      {/* Popular Deals - Featured Listings from Premium Users */}
       <section className="py-16 px-8 bg-gray-50">
         <div className="mb-8 flex items-center justify-between">
-          <h2>Popular Deals</h2>
+          <div className="flex items-center gap-3">
+            <h2>Popular Deals</h2>
+            <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">
+              <Star className="w-3 h-3 fill-yellow-900" />
+              Featured
+            </span>
+          </div>
           <div className="flex items-center gap-2">
-            <span className="text-gray-600">Advertised Listings</span>
-            <a href="/search" className="text-blue-500 hover:text-blue-600 flex items-center gap-1">
+            <span className="text-gray-600">Premium Listings</span>
+            <Link to="/search" className="text-blue-500 hover:text-blue-600 flex items-center gap-1">
               Browse All
               <ChevronRight className="w-4 h-4" />
-            </a>
+            </Link>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          {products.map((product) => (
-            <div key={product.id} className="flex flex-col gap-3">
-              <div className="bg-gray-100 rounded-lg aspect-square flex items-center justify-center p-4">
-                <img 
-                  src={product.image} 
-                  alt={product.title}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <p className="truncate">{product.title}</p>
-              <p className="font-semibold">{product.price}</p>
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-16">
+            <Loader className="w-8 h-8 animate-spin text-blue-500" />
+          </div>
+        ) : featuredProducts.length === 0 ? (
+          <div className="text-center py-16 text-gray-500">
+            <p>No featured listings available at the moment.</p>
+            <p className="text-sm mt-2">Premium members can feature their listings to appear here!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {featuredProducts.map((product) => (
+              <Link key={product.id} to={`/product/${product.id}`} className="group">
+                <div className="flex flex-col gap-3">
+                  <div className="relative bg-white rounded-lg aspect-square flex items-center justify-center p-4 border border-gray-200 group-hover:border-blue-300 group-hover:shadow-md transition-all">
+                    <img 
+                      src={product.image || '/images/placeholder.png'} 
+                      alt={product.name}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                    />
+                    {/* Featured Badge */}
+                    <span className="absolute top-2 left-2 inline-flex items-center gap-1 bg-yellow-400 text-yellow-900 text-xs font-medium px-2 py-0.5 rounded-full shadow-sm">
+                      <Star className="w-3 h-3 fill-yellow-900" />
+                      Featured
+                    </span>
+                    {/* Listing Type Badge */}
+                    <span className={`absolute top-2 right-2 px-2 py-0.5 text-xs rounded-full ${
+                      product.listing_type === 'rent' ? 'bg-blue-500 text-white' :
+                      product.listing_type === 'both' ? 'bg-purple-500 text-white' :
+                      'bg-green-500 text-white'
+                    }`}>
+                      {product.listing_type === 'both' ? 'Sale/Rent' : product.listing_type === 'rent' ? 'Rent' : 'Sale'}
+                    </span>
+                  </div>
+                  <p className="truncate group-hover:text-blue-600 transition-colors">{product.name}</p>
+                  <p className="font-semibold text-blue-600">{formatPrice(product)}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Premium Banner */}
