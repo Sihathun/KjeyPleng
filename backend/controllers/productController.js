@@ -62,6 +62,34 @@ export const getProducts = async (req, res) => {
     }
 };
 
+// Get featured products from premium users (public - for homepage)
+export const getFeaturedProducts = async (req, res) => {
+    try {
+        const products = await sql`
+            SELECT 
+                i.*,
+                u.name as seller_name,
+                u.email as seller_email,
+                u.profile_picture as seller_profile_picture,
+                u.is_premium as seller_is_premium
+            FROM instruments i
+            JOIN userschema u ON i.user_id = u.id
+            WHERE i.is_available = true
+            AND i.is_featured = true
+            AND u.is_premium = true
+            AND (u.subscription_expires_at IS NULL OR u.subscription_expires_at > NOW())
+            AND (i.expires_at IS NULL OR i.expires_at > NOW())
+            ORDER BY i.created_at DESC
+            LIMIT 12
+        `;
+
+        res.status(200).json({ success: true, data: products });
+    } catch (error) {
+        console.log("Error getFeaturedProducts", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
 // Get single product (public)
 export const getProduct = async (req, res) => {
     const { id } = req.params;

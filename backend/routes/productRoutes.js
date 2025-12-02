@@ -15,7 +15,8 @@ import {
     getBuyerOrders,
     updateOrderStatus,
     createOrder,
-    toggleFeatured
+    toggleFeatured,
+    getFeaturedProducts
 } from "../controllers/productController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import upload from "../middleware/upload.js";
@@ -25,6 +26,7 @@ const router = express.Router();
 // Public routes (no authentication required)
 router.get("/", getProducts);
 router.get("/categories", getCategories);
+router.get("/featured", getFeaturedProducts);
 
 // Protected routes - must come before /:id to avoid conflicts
 router.get("/my/listings", verifyToken, getMyListings);
