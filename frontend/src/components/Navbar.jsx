@@ -78,7 +78,7 @@ export default function Navbar() {
           {isPremium ? (
             <Link 
               to="/subscribe" 
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full font-medium hover:from-yellow-500 hover:to-yellow-600 transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full font-medium hover:from-yellow-500 hover:to-yellow-600 transition-all shadow-sm"
             >
               <Crown className="w-4 h-4" />
               Your Plan
@@ -86,7 +86,7 @@ export default function Navbar() {
           ) : (
             <Link 
               to="/subscribe" 
-              className="group flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full font-medium hover:from-blue-600 hover:to-purple-600 transition-all shadow-sm hover:shadow-md"
+              className="group flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-r from-blue-500 to-purple-500 text-white rounded-full font-medium hover:from-blue-600 hover:to-purple-600 transition-all shadow-sm hover:shadow-md"
             >
               <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
               Subscribe

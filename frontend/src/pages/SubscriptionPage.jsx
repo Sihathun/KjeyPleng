@@ -281,7 +281,7 @@ export default function SubscriptionPage() {
           {/* Modal */}
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-6 py-5">
+            <div className="bg-linear-to-r from-gray-100 to-gray-200 px-6 py-5">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
                   <AlertTriangle className="w-6 h-6 text-yellow-600" />

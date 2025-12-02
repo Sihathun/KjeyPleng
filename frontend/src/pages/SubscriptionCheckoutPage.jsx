@@ -96,7 +96,7 @@ export default function SubscriptionCheckoutPage() {
         {/* Order Summary Card */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-linear-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
               <Crown className="w-6 h-6 text-yellow-800" />
             </div>
             <div>
