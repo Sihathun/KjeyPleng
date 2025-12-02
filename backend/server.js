@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 
 import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import {sql} from "./config/db.js";
 import {aj} from "./lib/arcjet.js";
 
@@ -74,6 +75,7 @@ app.use(async (req, res, next) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 
 // initializing database
 async function initDB() {
@@ -89,6 +91,8 @@ async function initDB() {
                 profile_picture_public_id VARCHAR(255),
                 lastLogin TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 isVerified BOOLEAN NOT NULL DEFAULT FALSE,
+                is_premium BOOLEAN NOT NULL DEFAULT FALSE,
+                subscription_expires_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 resetPasswordToken VARCHAR(255),

@@ -9,27 +9,33 @@ export const getProducts = async (req, res) => {
         let products;
 
         // Basic query - get all available products (excluding expired ones)
+        // Premium user listings are shown first (priority placement)
         if (!category && !listing_type && !min_price && !max_price && !condition && !location && !search) {
             products = await sql`
                 SELECT 
                     i.*,
                     u.name as seller_name,
                     u.email as seller_email,
-                    u.profile_picture as seller_profile_picture
+                    u.profile_picture as seller_profile_picture,
+                    u.is_premium as seller_is_premium
                 FROM instruments i
                 JOIN userschema u ON i.user_id = u.id
                 WHERE i.is_available = true
                 AND (i.expires_at IS NULL OR i.expires_at > NOW())
-                ORDER BY i.created_at DESC
+                ORDER BY 
+                    CASE WHEN u.is_premium = true AND (u.subscription_expires_at IS NULL OR u.subscription_expires_at > NOW()) THEN 0 ELSE 1 END,
+                    i.created_at DESC
             `;
         } else {
             // Filtered query (excluding expired listings)
+            // Premium user listings are shown first (priority placement)
             products = await sql`
                 SELECT 
                     i.*,
                     u.name as seller_name,
                     u.email as seller_email,
-                    u.profile_picture as seller_profile_picture
+                    u.profile_picture as seller_profile_picture,
+                    u.is_premium as seller_is_premium
                 FROM instruments i
                 JOIN userschema u ON i.user_id = u.id
                 WHERE i.is_available = true
@@ -41,7 +47,9 @@ export const getProducts = async (req, res) => {
                 ${search ? sql`AND (i.name ILIKE ${'%' + search + '%'} OR i.description ILIKE ${'%' + search + '%'})` : sql``}
                 ${min_price ? sql`AND (i.sale_price >= ${min_price} OR i.rental_price >= ${min_price})` : sql``}
                 ${max_price ? sql`AND (i.sale_price <= ${max_price} OR i.rental_price <= ${max_price})` : sql``}
-                ORDER BY i.created_at DESC
+                ORDER BY 
+                    CASE WHEN u.is_premium = true AND (u.subscription_expires_at IS NULL OR u.subscription_expires_at > NOW()) THEN 0 ELSE 1 END,
+                    i.created_at DESC
             `;
         }
 
@@ -85,6 +93,12 @@ export const getProduct = async (req, res) => {
     }
 };
 
+// Subscription limits
+const SUBSCRIPTION_LIMITS = {
+    free: { maxListings: 3, listingDays: 3 },
+    premium: { maxListings: 8, listingDays: 7 }
+};
+
 // Create product (authenticated - user must be logged in)
 export const createProduct = async (req, res) => {
     const userId = req.userId; // From verifyToken middleware
@@ -120,6 +134,61 @@ export const createProduct = async (req, res) => {
     }
 
     try {
+        // Check user subscription status and listing limits
+        const user = await sql`
+            SELECT id, is_premium, subscription_expires_at
+            FROM userschema
+            WHERE id = ${userId}
+            LIMIT 1
+        `;
+
+        if (user.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Determine if user has active premium subscription
+        let isPremium = user[0].is_premium;
+        if (isPremium && user[0].subscription_expires_at) {
+            if (new Date(user[0].subscription_expires_at) < new Date()) {
+                isPremium = false;
+                // Update user's premium status
+                await sql`
+                    UPDATE userschema
+                    SET is_premium = FALSE, subscription_expires_at = NULL, updated_at = NOW()
+                    WHERE id = ${userId}
+                `;
+            }
+        }
+
+        const limits = isPremium ? SUBSCRIPTION_LIMITS.premium : SUBSCRIPTION_LIMITS.free;
+
+        // Count current active listings
+        const listingCount = await sql`
+            SELECT COUNT(*) as count
+            FROM instruments
+            WHERE user_id = ${userId}
+                AND is_available = TRUE
+                AND (expires_at IS NULL OR expires_at > NOW())
+                AND NOT EXISTS (
+                    SELECT 1 FROM orders o 
+                    WHERE o.instrument_id = instruments.id AND o.status = 'completed'
+                )
+        `;
+
+        const currentCount = parseInt(listingCount[0].count);
+
+        if (currentCount >= limits.maxListings) {
+            return res.status(400).json({ 
+                success: false, 
+                message: isPremium 
+                    ? `You have reached the maximum of ${limits.maxListings} active listings for premium members`
+                    : `You have reached the maximum of ${limits.maxListings} active listings. Upgrade to premium for up to ${SUBSCRIPTION_LIMITS.premium.maxListings} listings!`,
+                isPremium,
+                currentListings: currentCount,
+                maxListings: limits.maxListings
+            });
+        }
+
         let productImage = image || image_url || null;
         let productImages = [];
 
@@ -130,15 +199,19 @@ export const createProduct = async (req, res) => {
             productImages = uploadedImages.map(img => img.url);
         }
 
+        // Calculate expires_at based on subscription
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + limits.listingDays);
+
         const newProduct = await sql`
             INSERT INTO instruments (
                 user_id, name, description, category, brand, image, images, 
-                condition, location, listing_type, sale_price, rental_price, rental_period
+                condition, location, listing_type, sale_price, rental_price, rental_period, expires_at
             )
             VALUES (
                 ${userId}, ${name}, ${description}, ${category}, ${brand || null}, ${productImage}, 
                 ${productImages}, ${condition}, ${location}, ${listing_type}, 
-                ${sale_price || null}, ${rental_price || null}, ${rental_period || null}
+                ${sale_price || null}, ${rental_price || null}, ${rental_period || null}, ${expiresAt}
             )
             RETURNING *
         `;
@@ -378,6 +451,11 @@ export const uploadProductImages = async (req, res) => {
 // Get dashboard statistics for the logged-in user (seller analytics)
 export const getDashboardStats = async (req, res) => {
     const userId = req.userId;
+    const { startDate, endDate } = req.query;
+
+    // Default to last 7 days if no dates provided
+    const start = startDate ? new Date(startDate) : new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate) : new Date();
 
     try {
         // Total listed products (all products the user has listed)
@@ -424,12 +502,12 @@ export const getDashboardStats = async (req, res) => {
         `;
         const ongoingRentals = parseInt(ongoingRentalsResult[0]?.count || 0);
 
-        // Revenue by day for the last 7 days
+        // Revenue by day for the selected date range
         const revenueByDayResult = await sql`
             WITH dates AS (
                 SELECT generate_series(
-                    CURRENT_DATE - INTERVAL '6 days',
-                    CURRENT_DATE,
+                    ${start}::date,
+                    ${end}::date,
                     INTERVAL '1 day'
                 )::date AS day
             ),
@@ -440,7 +518,8 @@ export const getDashboardStats = async (req, res) => {
                 FROM orders 
                 WHERE seller_id = ${userId} 
                     AND status = 'completed'
-                    AND created_at >= CURRENT_DATE - INTERVAL '6 days'
+                    AND DATE(created_at) >= ${start}::date
+                    AND DATE(created_at) <= ${end}::date
                 GROUP BY DATE(created_at)
             ),
             rental_revenue AS (
@@ -450,12 +529,13 @@ export const getDashboardStats = async (req, res) => {
                 FROM rentals 
                 WHERE owner_id = ${userId} 
                     AND status = 'completed'
-                    AND created_at >= CURRENT_DATE - INTERVAL '6 days'
+                    AND DATE(created_at) >= ${start}::date
+                    AND DATE(created_at) <= ${end}::date
                 GROUP BY DATE(created_at)
             )
             SELECT 
                 dates.day,
-                TO_CHAR(dates.day, 'Dy') as day_name,
+                TO_CHAR(dates.day, 'DD-MM-YYYY') as date_formatted,
                 COALESCE(o.revenue, 0) + COALESCE(r.revenue, 0) as revenue
             FROM dates
             LEFT JOIN order_revenue o ON dates.day = o.day
@@ -464,7 +544,8 @@ export const getDashboardStats = async (req, res) => {
         `;
 
         const revenueByDay = revenueByDayResult.map(row => ({
-            day: row.day_name,
+            date: row.date_formatted,
+            fullDate: row.day,
             revenue: parseFloat(row.revenue || 0)
         }));
 
