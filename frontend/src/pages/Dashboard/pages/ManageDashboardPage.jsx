@@ -1,17 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useProductStore } from '../../../store/productStore';
-import { Edit, Trash2, Eye, EyeOff, Loader, Package, AlertCircle, RefreshCw, Clock } from 'lucide-react';
+import { Edit, Trash2, Eye, EyeOff, Loader, Package, AlertCircle, RefreshCw, Clock, Star } from 'lucide-react';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 export default function ManageProductPage() {
-  const { myListings, fetchMyListings, updateProduct, deleteProduct, renewListing, isLoading, error } = useProductStore();
+  const { myListings, fetchMyListings, updateProduct, deleteProduct, renewListing, toggleFeatured, isLoading, error } = useProductStore();
   const [editingProduct, setEditingProduct] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [renewingId, setRenewingId] = useState(null);
+  const [featuringId, setFeaturingId] = useState(null);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     fetchMyListings();
+    fetchSubscriptionStatus();
   }, [fetchMyListings]);
+
+  const fetchSubscriptionStatus = async () => {
+    try {
+      const response = await axios.get('/api/subscription/status');
+      setIsPremium(response.data.subscription?.isPremium || false);
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    }
+  };
 
   const handleEdit = (product) => {
     setEditingProduct(product);
@@ -65,6 +78,23 @@ export default function ManageProductPage() {
       toast.error('Failed to renew listing');
     } finally {
       setRenewingId(null);
+    }
+  };
+
+  const handleToggleFeatured = async (product) => {
+    if (!isPremium) {
+      toast.error('Upgrade to premium to feature your listings!');
+      return;
+    }
+    
+    try {
+      setFeaturingId(product.id);
+      const response = await toggleFeatured(product.id);
+      toast.success(response.message);
+    } catch (err) {
+      toast.error(err.message || 'Failed to toggle featured status');
+    } finally {
+      setFeaturingId(null);
     }
   };
 
@@ -233,6 +263,33 @@ export default function ManageProductPage() {
 
                     {/* Actions */}
                     <div className="col-span-2 flex gap-1">
+                      {/* Feature Toggle - Only for premium users */}
+                      <button
+                        onClick={() => handleToggleFeatured(product)}
+                        disabled={featuringId === product.id || product.is_sold || !product.is_available}
+                        className={`p-2 rounded-md transition-colors ${
+                          !isPremium
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : product.is_sold || !product.is_available
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : product.is_featured
+                            ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100'
+                            : 'text-gray-400 hover:bg-gray-100 hover:text-yellow-500'
+                        }`}
+                        title={
+                          !isPremium 
+                            ? 'Upgrade to premium to feature listings' 
+                            : product.is_sold 
+                            ? 'Cannot feature - product sold'
+                            : !product.is_available
+                            ? 'Cannot feature - product unlisted'
+                            : product.is_featured 
+                            ? 'Remove featured status' 
+                            : 'Feature this listing'
+                        }
+                      >
+                        <Star className={`w-4 h-4 ${product.is_featured ? 'fill-yellow-500' : ''} ${featuringId === product.id ? 'animate-pulse' : ''}`} />
+                      </button>
                       <button
                         onClick={() => handleRenew(product.id)}
                         disabled={renewingId === product.id || product.is_sold}

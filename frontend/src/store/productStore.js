@@ -217,6 +217,35 @@ export const useProductStore = create((set, get) => ({
     }
   },
 
+  // Toggle featured status for a product (only one at a time for premium users)
+  toggleFeatured: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.post(`${API_URL}/featured/${id}`);
+      // Update all listings - unfeatured the old one, featured the new one
+      set((state) => ({
+        myListings: state.myListings.map((p) => {
+          if (p.id === id) {
+            return response.data.data;
+          }
+          // If another product was featured, unfeatured it
+          if (p.is_featured && response.data.data.is_featured) {
+            return { ...p, is_featured: false };
+          }
+          return p;
+        }),
+        isLoading: false,
+      }));
+      return response.data;
+    } catch (error) {
+      set({
+        error: error.response?.data?.message || "Error toggling featured status",
+        isLoading: false,
+      });
+      throw error;
+    }
+  },
+
   // Fetch seller's orders (orders where current user is the seller)
   fetchSellerOrders: async () => {
     set({ isLoading: true, error: null });

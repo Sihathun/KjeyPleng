@@ -226,7 +226,7 @@ export default function SubscriptionCheckoutPage() {
               </li>
               <li className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
-                Featured seller badge
+                1 featured listing badge
               </li>
             </ul>
           </div>

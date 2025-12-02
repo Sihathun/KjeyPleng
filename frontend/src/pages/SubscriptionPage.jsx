@@ -145,7 +145,7 @@ export default function SubscriptionPage() {
                   <div className="shrink-0 w-5 h-5 mt-0.5 text-red-400">
                     <X className="w-full h-full" />
                   </div>
-                  <p className="text-gray-500">No featured badge</p>
+                  <p className="text-gray-500">No featured listing badge</p>
                 </div>
               </div>
 
@@ -233,7 +233,7 @@ export default function SubscriptionPage() {
                   <div className="shrink-0 w-5 h-5 mt-0.5 text-green-500">
                     <Check className="w-full h-full" />
                   </div>
-                  <p className="font-medium">Featured seller badge</p>
+                  <p className="font-medium">1 featured listing badge</p>
                 </div>
               </div>
 
@@ -322,7 +322,7 @@ export default function SubscriptionPage() {
                   <div className="w-5 h-5 mt-0.5 text-red-500 shrink-0">
                     <X className="w-full h-full" />
                   </div>
-                  <p className="text-gray-600">You will lose the <span className="font-medium">featured seller badge</span></p>
+                  <p className="text-gray-600">You will lose the <span className="font-medium">featured listing badge</span></p>
                 </div>
               </div>
 
