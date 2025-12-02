@@ -121,6 +121,7 @@ async function initDB() {
                 rental_period VARCHAR(50),
                 is_available BOOLEAN NOT NULL DEFAULT TRUE,
                 is_approved BOOLEAN NOT NULL DEFAULT FALSE,
+                is_featured BOOLEAN NOT NULL DEFAULT FALSE,
                 expires_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '3 days'),
                 views INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

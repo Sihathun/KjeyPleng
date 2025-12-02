@@ -9,7 +9,7 @@ export const getProducts = async (req, res) => {
         let products;
 
         // Basic query - get all available products (excluding expired ones)
-        // Premium user listings are shown first (priority placement)
+        // Featured products shown first, then premium user listings (priority placement)
         if (!category && !listing_type && !min_price && !max_price && !condition && !location && !search) {
             products = await sql`
                 SELECT 
@@ -23,12 +23,13 @@ export const getProducts = async (req, res) => {
                 WHERE i.is_available = true
                 AND (i.expires_at IS NULL OR i.expires_at > NOW())
                 ORDER BY 
+                    CASE WHEN i.is_featured = true AND u.is_premium = true AND (u.subscription_expires_at IS NULL OR u.subscription_expires_at > NOW()) THEN 0 ELSE 1 END,
                     CASE WHEN u.is_premium = true AND (u.subscription_expires_at IS NULL OR u.subscription_expires_at > NOW()) THEN 0 ELSE 1 END,
                     i.created_at DESC
             `;
         } else {
             // Filtered query (excluding expired listings)
-            // Premium user listings are shown first (priority placement)
+            // Featured products shown first, then premium user listings (priority placement)
             products = await sql`
                 SELECT 
                     i.*,
@@ -48,6 +49,7 @@ export const getProducts = async (req, res) => {
                 ${min_price ? sql`AND (i.sale_price >= ${min_price} OR i.rental_price >= ${min_price})` : sql``}
                 ${max_price ? sql`AND (i.sale_price <= ${max_price} OR i.rental_price <= ${max_price})` : sql``}
                 ORDER BY 
+                    CASE WHEN i.is_featured = true AND u.is_premium = true AND (u.subscription_expires_at IS NULL OR u.subscription_expires_at > NOW()) THEN 0 ELSE 1 END,
                     CASE WHEN u.is_premium = true AND (u.subscription_expires_at IS NULL OR u.subscription_expires_at > NOW()) THEN 0 ELSE 1 END,
                     i.created_at DESC
             `;
@@ -71,7 +73,8 @@ export const getProduct = async (req, res) => {
                 u.name as seller_name,
                 u.email as seller_email,
                 u.id as seller_id,
-                u.profile_picture as seller_profile_picture
+                u.profile_picture as seller_profile_picture,
+                u.is_premium as seller_is_premium
             FROM instruments i
             JOIN userschema u ON i.user_id = u.id
             WHERE i.id = ${id}
@@ -309,6 +312,102 @@ export const updateProduct = async (req, res) => {
         res.status(200).json({ success: true, data: updatedProduct[0] });
     } catch (error) {
         console.log("Error updateProduct", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+// Toggle featured status for a product (only premium users, only one product at a time)
+export const toggleFeatured = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.userId;
+
+    try {
+        // Check if user is premium
+        const user = await sql`
+            SELECT id, is_premium, subscription_expires_at
+            FROM userschema
+            WHERE id = ${userId}
+            LIMIT 1
+        `;
+
+        if (user.length === 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        // Check if premium is active
+        let isPremium = user[0].is_premium;
+        if (isPremium && user[0].subscription_expires_at) {
+            if (new Date(user[0].subscription_expires_at) < new Date()) {
+                isPremium = false;
+            }
+        }
+
+        if (!isPremium) {
+            return res.status(403).json({ 
+                success: false, 
+                message: "Only premium members can feature products. Upgrade to premium to access this feature!" 
+            });
+        }
+
+        // Check if product exists and belongs to user
+        const existingProduct = await sql`
+            SELECT * FROM instruments WHERE id = ${id}
+        `;
+
+        if (existingProduct.length === 0) {
+            return res.status(404).json({ success: false, message: "Product not found" });
+        }
+
+        if (existingProduct[0].user_id !== userId) {
+            return res.status(403).json({ success: false, message: "You can only feature your own listings" });
+        }
+
+        const currentlyFeatured = existingProduct[0].is_featured;
+
+        if (currentlyFeatured) {
+            // If already featured, unfeatured it
+            await sql`
+                UPDATE instruments
+                SET is_featured = FALSE, updated_at = NOW()
+                WHERE id = ${id}
+            `;
+
+            const updatedProduct = await sql`
+                SELECT * FROM instruments WHERE id = ${id}
+            `;
+
+            return res.status(200).json({ 
+                success: true, 
+                message: "Product unfeatured successfully",
+                data: updatedProduct[0]
+            });
+        } else {
+            // If not featured, first unfeatured any currently featured product by this user
+            await sql`
+                UPDATE instruments
+                SET is_featured = FALSE, updated_at = NOW()
+                WHERE user_id = ${userId} AND is_featured = TRUE
+            `;
+
+            // Then feature this product
+            await sql`
+                UPDATE instruments
+                SET is_featured = TRUE, updated_at = NOW()
+                WHERE id = ${id}
+            `;
+
+            const updatedProduct = await sql`
+                SELECT * FROM instruments WHERE id = ${id}
+            `;
+
+            return res.status(200).json({ 
+                success: true, 
+                message: "Product featured successfully! This is now your highlighted listing.",
+                data: updatedProduct[0]
+            });
+        }
+    } catch (error) {
+        console.log("Error toggleFeatured", error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 };

@@ -14,7 +14,8 @@ import {
     getSellerOrders,
     getBuyerOrders,
     updateOrderStatus,
-    createOrder
+    createOrder,
+    toggleFeatured
 } from "../controllers/productController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import upload from "../middleware/upload.js";
@@ -33,6 +34,7 @@ router.get("/dashboard/stats", verifyToken, getDashboardStats);
 router.post("/", verifyToken, upload.array('images', 5), createProduct);
 router.post("/upload", verifyToken, upload.array('images', 5), uploadProductImages);
 router.post("/renew/:id", verifyToken, renewListing);
+router.post("/featured/:id", verifyToken, toggleFeatured);
 router.post("/checkout", verifyToken, createOrder);
 router.put("/orders/:id/status", verifyToken, updateOrderStatus);
 

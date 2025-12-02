@@ -307,10 +307,12 @@ export const downgradeToFree = async (req, res) => {
         `;
 
         // Update all existing active listings to have 3-day expiry from now
+        // Also remove featured status since it's a premium feature
         await sql`
             UPDATE instruments
             SET 
                 expires_at = NOW() + INTERVAL '3 days',
+                is_featured = FALSE,
                 updated_at = NOW()
             WHERE user_id = ${req.userId}
                 AND is_available = TRUE
