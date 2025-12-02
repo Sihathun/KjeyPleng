@@ -173,10 +173,18 @@ export const useProductStore = create((set, get) => ({
   },
 
   // Fetch dashboard statistics for the logged-in user
-  fetchDashboardStats: async () => {
+  fetchDashboardStats: async (startDate, endDate) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axios.get(`${API_URL}/dashboard/stats`);
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+      
+      const url = params.toString() 
+        ? `${API_URL}/dashboard/stats?${params.toString()}`
+        : `${API_URL}/dashboard/stats`;
+      
+      const response = await axios.get(url);
       set({ dashboardStats: response.data.data, isLoading: false });
       return response.data.data;
     } catch (error) {

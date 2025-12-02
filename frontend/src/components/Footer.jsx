@@ -1,34 +1,40 @@
 import svgPaths from "../imports/svg-vis812obmi.js";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
   return (
     <footer className="w-full border-t border-gray-300 mt-auto">
       <div className="max-w-[1440px] mx-auto px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-12 md:gap-24">
           {/* About Section */}
           <div className="space-y-4">
-            <h2 className="bg-linear-to-r from-blue-500 to-black bg-clip-text text-transparent">
-              <span>kjey</span>
-              <span className="font-bold">Pleng</span>
-            </h2>
-            <p className="text-gray-600 leading-relaxed">
+            <Link to="/">
+              <h2 className="bg-linear-to-r from-blue-500 to-black bg-clip-text text-transparent">
+                <span>kjey</span>
+                <span className="font-bold">Pleng</span>
+              </h2>
+            </Link>
+            <p className="text-gray-600 leading-relaxed max-w-md">
               Welcome to KjeyPleng, the home for every music lover! Whether you're here to rent, lend, buy, or sell musical instruments, our community helps you connect, share, and keep the music alive. Let's make great sounds together!
             </p>
           </div>
 
           {/* Navigation Section */}
-          <div className="space-y-4 md:ml-auto">
+          <div className="space-y-4">
             <h3 className="font-semibold text-gray-900">Navigation</h3>
             <nav className="flex flex-col gap-2">
-              <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+              <Link to="/" className="text-gray-600 hover:text-gray-900 transition-colors">
                 Home
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
+              </Link>
+              <Link to="/search" className="text-gray-600 hover:text-gray-900 transition-colors">
                 Products
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors">
-                Vendor
-              </a>
+              </Link>
+              <Link to="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Dashboard
+              </Link>
+              <Link to="/subscribe" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Subscribe
+              </Link>
             </nav>
           </div>
 

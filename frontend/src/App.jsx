@@ -6,6 +6,7 @@ import Footer from "./components/Footer";
 
 import HomePage from "./pages/HomePage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import SubscriptionCheckoutPage from "./pages/SubscriptionCheckoutPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import SearchPage from "./pages/SearchPage";
@@ -70,6 +71,14 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/subscribe" element={<SubscriptionPage />} />
+        <Route
+          path="/subscribe/checkout"
+          element={
+            <ProtectedRoute>
+              <SubscriptionCheckoutPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/login"
           element={
