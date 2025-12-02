@@ -35,7 +35,7 @@ export default function SubscriptionPage() {
   const handleUpgrade = () => {
     if (!isAuthenticated) {
       toast.error("Please sign in to upgrade to premium");
-      navigate("/sign-in");
+      navigate("/login");
       return;
     }
     navigate("/subscribe/checkout");
@@ -44,7 +44,7 @@ export default function SubscriptionPage() {
   const handleDowngrade = async () => {
     if (!isAuthenticated) {
       toast.error("Please sign in first");
-      navigate("/sign-in");
+      navigate("/login");
       return;
     }
     setShowDowngradeModal(true);

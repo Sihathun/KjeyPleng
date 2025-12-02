@@ -92,12 +92,12 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="container px-8 py-12 mx-auto">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+      <div className="container px-4 sm:px-8 py-6 sm:py-12 mx-auto">
+        <div className="grid grid-cols-1 gap-8 lg:gap-12 lg:grid-cols-2">
           {/* Left Side - Image Gallery */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Main Image */}
-            <div className="overflow-hidden bg-gray-100 border-2 border-gray-200 rounded-3xl">
+            <div className="overflow-hidden bg-gray-100 border-2 border-gray-200 rounded-2xl sm:rounded-3xl">
               <div className="relative aspect-square">
                 <img
                   src={productImages[selectedImage] || '/images/placeholder.png'}
@@ -105,8 +105,8 @@ export default function ProductPage() {
                   className="object-cover w-full h-full"
                 />
                 {/* Listing Type Badge */}
-                <div className="absolute top-4 left-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
                     product.listing_type === 'rent' 
                       ? 'bg-blue-100 text-blue-700' 
                       : product.listing_type === 'both'
@@ -121,12 +121,12 @@ export default function ProductPage() {
 
             {/* Thumbnail Images */}
             {productImages.length > 1 && (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-4 gap-2 sm:gap-4">
                 {productImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`relative aspect-square overflow-hidden rounded-2xl border-2 transition-all ${
+                    className={`relative aspect-square overflow-hidden rounded-xl sm:rounded-2xl border-2 transition-all ${
                       selectedImage === index
                         ? 'border-blue-500 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-gray-300'
@@ -144,33 +144,33 @@ export default function ProductPage() {
           </div>
 
           {/* Right Side - Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Product Name */}
-            <h1 className="text-3xl font-semibold">{product.name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold">{product.name}</h1>
 
             {/* Brand */}
             {product.brand && (
-              <p className="text-lg text-gray-600">Brand: {product.brand}</p>
+              <p className="text-base sm:text-lg text-gray-600">Brand: {product.brand}</p>
             )}
 
             {/* Seller Info */}
-            <div className="flex items-center gap-4 pb-6 border-b-2 border-gray-200">
+            <div className="flex items-center gap-3 sm:gap-4 pb-4 sm:pb-6 border-b-2 border-gray-200">
               {product.seller_profile_picture ? (
                 <img
                   src={product.seller_profile_picture}
                   alt={product.seller_name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200"
                 />
               ) : (
-                <div className="relative flex items-center justify-center w-16 h-16 overflow-hidden bg-blue-500 rounded-full">
-                  <span className="text-white text-2xl font-bold">
+                <div className="relative flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 overflow-hidden bg-blue-500 rounded-full">
+                  <span className="text-white text-xl sm:text-2xl font-bold">
                     {product.seller_name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
               )}
               <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-lg font-medium">{product.seller_name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-base sm:text-lg font-medium">{product.seller_name}</p>
                   {product.is_featured && product.seller_is_premium && (
                     <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded-full">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -180,24 +180,24 @@ export default function ProductPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">Seller</p>
+                <p className="text-xs sm:text-sm text-gray-500">Seller</p>
               </div>
             </div>
 
             {/* Price */}
-            <div className="pb-6 border-b-2 border-gray-200">
+            <div className="pb-4 sm:pb-6 border-b-2 border-gray-200">
               {product.listing_type === 'both' ? (
                 <div className="space-y-2">
-                  <p className="text-3xl text-green-600 font-semibold">
+                  <p className="text-2xl sm:text-3xl text-green-600 font-semibold">
                     Buy: ${parseFloat(product.sale_price).toFixed(2)}
                   </p>
-                  <p className="text-2xl text-blue-600">
+                  <p className="text-xl sm:text-2xl text-blue-600">
                     Rent: ${parseFloat(product.rental_price).toFixed(2)}/{product.rental_period || 'day'}
                   </p>
                 </div>
               ) : product.listing_type === 'rent' ? (
-                <p className="text-4xl text-blue-600 font-semibold">
-                  ${parseFloat(product.rental_price).toFixed(2)}<span className="text-xl">/{product.rental_period || 'day'}</span>
+                <p className="text-3xl sm:text-4xl text-blue-600 font-semibold">
+                  ${parseFloat(product.rental_price).toFixed(2)}<span className="text-lg sm:text-xl">/{product.rental_period || 'day'}</span>
                 </p>
               ) : (
                 <p className="text-4xl text-green-600 font-semibold">${parseFloat(product.sale_price).toFixed(2)}</p>

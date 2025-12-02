@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useProductStore } from '../store/productStore';
 import { useCartStore } from '../store/cartStore';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Loader, ShoppingCart, Check } from 'lucide-react';
+import { Loader, ShoppingCart, Check, Filter, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SearchPage() {
@@ -10,6 +10,7 @@ export default function SearchPage() {
   const { products, fetchProducts, isLoading } = useProductStore();
   const { addToCart } = useCartStore();
   const [addedItems, setAddedItems] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('q') || '');
@@ -113,18 +114,18 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Search Section */}
-      <div className="flex items-center justify-center gap-6 px-8 py-12 bg-gray-50">
-        <div className="relative flex-1 max-w-3xl">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 px-4 sm:px-8 py-6 sm:py-12 bg-gray-50">
+        <div className="relative flex-1 w-full max-w-3xl">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Search for an instrument"
-            className="w-full px-16 py-4 bg-white border-2 border-gray-300 rounded-full outline-none focus:border-blue-400"
+            className="w-full px-12 sm:px-16 py-3 sm:py-4 bg-white border-2 border-gray-300 rounded-full outline-none focus:border-blue-400 text-sm sm:text-base"
           />
           <svg 
-            className="absolute w-8 h-8 transform -translate-y-1/2 left-4 top-1/2" 
+            className="absolute w-6 h-6 sm:w-8 sm:h-8 transform -translate-y-1/2 left-4 top-1/2" 
             fill="none" 
             viewBox="0 0 30 30"
           >
@@ -146,17 +147,27 @@ export default function SearchPage() {
             />
           </svg>
         </div>
-        <button
-          onClick={handleSearch}
-          className="px-12 py-4 text-white transition-colors bg-blue-500 rounded-full hover:bg-blue-600"
-        >
-          Search
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            onClick={handleSearch}
+            className="flex-1 sm:flex-none px-8 sm:px-12 py-3 sm:py-4 text-white transition-colors bg-blue-500 rounded-full hover:bg-blue-600 text-sm sm:text-base"
+          >
+            Search
+          </button>
+          {/* Mobile Filter Button */}
+          <button
+            onClick={() => setShowFilters(true)}
+            className="lg:hidden px-4 py-3 border-2 border-gray-300 rounded-full hover:bg-gray-100 transition-colors flex items-center gap-2"
+          >
+            <Filter className="w-5 h-5" />
+            <span className="sm:inline hidden">Filters</span>
+          </button>
+        </div>
       </div>
 
-      <div className="container flex gap-8 px-8 py-12 mx-auto">
-        {/* Sidebar */}
-        <div className="w-64 space-y-8 shrink-0">
+      <div className="container flex gap-8 px-4 sm:px-8 py-6 sm:py-12 mx-auto">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block w-64 space-y-8 shrink-0">
           {/* Instrument Type Filter */}
           <div className="space-y-4">
             <h3 className="pb-2 border-b-2 border-black">Instrument Type</h3>
@@ -341,6 +352,118 @@ export default function SearchPage() {
           </div>
         </div>
 
+        {/* Mobile Filter Overlay */}
+        {showFilters && (
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setShowFilters(false)}>
+            <div 
+              className="absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-white overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Filters</h2>
+                <button onClick={() => setShowFilters(false)} className="p-2 hover:bg-gray-100 rounded-full">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-4 space-y-6">
+                {/* Mobile Instrument Type Filter */}
+                <div className="space-y-3">
+                  <h3 className="font-medium pb-2 border-b border-gray-200">Instrument Type</h3>
+                  <div className="space-y-1">
+                    {instrumentTypes.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setSelectedType(type)}
+                        className={`block w-full text-left px-3 py-2 rounded transition-colors ${
+                          selectedType === type
+                            ? 'bg-blue-500 text-white'
+                            : 'hover:bg-gray-100'
+                        }`}
+                      >
+                        {typeLabels[type] || type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mobile Condition Filter */}
+                <div className="space-y-3">
+                  <h3 className="font-medium pb-2 border-b border-gray-200">Condition</h3>
+                  <div className="space-y-2">
+                    {['all', 'new', 'like_new', 'good', 'fair'].map((cond) => (
+                      <label key={cond} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="mobile-condition"
+                          value={cond}
+                          checked={selectedCondition === cond}
+                          onChange={(e) => setSelectedCondition(e.target.value)}
+                          className="w-4 h-4"
+                        />
+                        <span>{cond === 'all' ? 'All' : cond === 'like_new' ? 'Like New' : cond.charAt(0).toUpperCase() + cond.slice(1)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mobile Price Filter */}
+                <div className="space-y-3">
+                  <h3 className="font-medium pb-2 border-b border-gray-200">Price</h3>
+                  <div className="space-y-2">
+                    {[
+                      { value: 'all', label: 'All Prices' },
+                      { value: 'under100', label: 'Under $100' },
+                      { value: '100to500', label: '$100 to $500' },
+                      { value: 'over500', label: 'Over $500' },
+                      { value: 'custom', label: 'Custom Range' },
+                    ].map((price) => (
+                      <label key={price.value} className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="mobile-price"
+                          value={price.value}
+                          checked={priceRange === price.value}
+                          onChange={(e) => setPriceRange(e.target.value)}
+                          className="w-4 h-4"
+                        />
+                        <span>{price.label}</span>
+                      </label>
+                    ))}
+                    {priceRange === 'custom' && (
+                      <div className="flex items-center gap-2 pt-2">
+                        <input
+                          type="number"
+                          placeholder="Min"
+                          value={minPrice}
+                          onChange={(e) => setMinPrice(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded"
+                        />
+                        <span>to</span>
+                        <input
+                          type="number"
+                          placeholder="Max"
+                          value={maxPrice}
+                          onChange={(e) => setMaxPrice(e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Apply Button */}
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="w-full py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Product List */}
         <div className="flex-1">
           {isLoading ? (
@@ -353,11 +476,11 @@ export default function SearchPage() {
               <p>Try adjusting your filters or search query</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {products.map((product) => (
                 <Link to={`/product/${product.id}`} key={product.id}>
                   <div className="overflow-hidden transition-shadow bg-white border-2 border-gray-200 rounded-2xl hover:shadow-xl">
-                    <div className="relative h-64 bg-gray-100">
+                    <div className="relative h-48 sm:h-64 bg-gray-100">
                       {product.image ? (
                         <img
                           src={product.image}
