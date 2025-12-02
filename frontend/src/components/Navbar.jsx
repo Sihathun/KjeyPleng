@@ -72,6 +72,9 @@ export default function Navbar() {
           <Link to="/" className="text-black hover:opacity-75 transition-opacity">
             Home
           </Link>
+          <Link to="/search" className="text-black hover:opacity-75 transition-opacity">
+            Browse
+          </Link>
           {isPremium ? (
             <Link 
               to="/subscribe" 
@@ -89,6 +92,9 @@ export default function Navbar() {
               Subscribe
             </Link>
           )}
+          <Link to="/my-orders" className="text-black hover:opacity-75 transition-opacity">
+            Your Orders
+          </Link>
           <Link to="/dashboard" className="text-black hover:opacity-75 transition-opacity">
             Dashboard
           </Link>
