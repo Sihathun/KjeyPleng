@@ -12,17 +12,21 @@ import authRoutes from "./routes/authRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import {sql} from "./config/db.js";
 
-// Conditionally import Arcjet only if key is available
+// Arcjet is optional - only load if key is available
 let aj = null;
-if (process.env.ARCJET_KEY) {
-    try {
-        const arcjetModule = await import("./lib/arcjet.js");
-        aj = arcjetModule.aj;
-        console.log("Arcjet loaded successfully");
-    } catch (error) {
-        console.log("Arcjet not loaded:", error.message);
+const loadArcjet = async () => {
+    if (process.env.ARCJET_KEY) {
+        try {
+            const arcjetModule = await import("./lib/arcjet.js");
+            aj = arcjetModule.aj;
+            console.log("Arcjet loaded successfully");
+        } catch (error) {
+            console.log("Arcjet not loaded:", error.message);
+        }
     }
-}
+};
+// Load Arcjet in the background (don't block startup)
+loadArcjet();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
