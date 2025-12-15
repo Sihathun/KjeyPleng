@@ -6,6 +6,11 @@ export const useCartStore = create(
     (set, get) => ({
       items: [],
       
+      // Check if user owns the product
+      isOwnProduct: (product, userId) => {
+        return product.user_id === userId;
+      },
+
       // Add item to cart
       addToCart: (product, orderType = 'sale', rentalDays = 1) => {
         const items = get().items;

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProductStore } from '../store/productStore';
 import { useCartStore } from '../store/cartStore';
-import { Loader, ShoppingCart, Check } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+import { Loader, ShoppingCart, Check, Edit } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 // Helper function to get condition label
@@ -29,10 +30,14 @@ const formatPrice = (product) => {
 export default function ProductPage() {
   const { id } = useParams();
   const { currentProduct: product, fetchProduct, fetchProducts, products, isLoading, error, clearCurrentProduct } = useProductStore();
-  const { addToCart } = useCartStore();
+  const { addToCart, isOwnProduct } = useCartStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [selectedImage, setSelectedImage] = useState(0);
   const [addedToCart, setAddedToCart] = useState({ sale: false, rental: false });
   const [rentalDays, setRentalDays] = useState(1);
+
+  // Check if current user owns this product
+  const isOwner = isAuthenticated && user && product && product.user_id === user.id;
 
   useEffect(() => {
     if (id) {
@@ -243,7 +248,21 @@ export default function ProductPage() {
             )}
 
             {/* Action Buttons */}
-            {product.listing_type === 'both' ? (
+            {isOwner ? (
+              // Owner sees edit button instead of buy/rent
+              <div className="space-y-3">
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                  <p className="text-yellow-800 text-center">This is your listing</p>
+                </div>
+                <Link 
+                  to="/dashboard/manage-product"
+                  className="w-full py-4 text-xl text-white transition-all bg-gray-700 rounded-xl hover:bg-gray-800 hover:shadow-lg flex items-center justify-center gap-2"
+                >
+                  <Edit className="w-6 h-6" />
+                  Manage Listing
+                </Link>
+              </div>
+            ) : product.listing_type === 'both' ? (
               <div className="flex gap-4">
                 <button 
                   onClick={() => {

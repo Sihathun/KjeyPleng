@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useProductStore } from '../store/productStore';
 import { useCartStore } from '../store/cartStore';
+import { useAuthStore } from '../store/authStore';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Loader, ShoppingCart, Check, Filter, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -9,6 +10,7 @@ export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { products, fetchProducts, isLoading } = useProductStore();
   const { addToCart } = useCartStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [addedItems, setAddedItems] = useState({});
   const [showFilters, setShowFilters] = useState(false);
   
@@ -98,9 +100,20 @@ export default function SearchPage() {
     return labels[condition] || condition;
   };
 
+  // Check if user owns the product
+  const isOwnProduct = (product) => {
+    return isAuthenticated && user && product.user_id === user.id;
+  };
+
   const handleAddToCart = (e, product, orderType) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
+    
+    // Prevent adding own products to cart
+    if (isOwnProduct(product)) {
+      toast.error("You cannot purchase your own product");
+      return;
+    }
     
     addToCart(product, orderType, 1);
     setAddedItems({ ...addedItems, [`${product.id}-${orderType}`]: true });
@@ -523,7 +536,12 @@ export default function SearchPage() {
                       <p className="text-blue-600 font-semibold">
                         {formatPrice(product)}
                       </p>
-                      {product.listing_type === 'both' ? (
+                      {isOwnProduct(product) ? (
+                        // Show "Your Listing" badge for own products
+                        <div className="py-2 px-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+                          <span className="text-yellow-700 text-sm font-medium">Your Listing</span>
+                        </div>
+                      ) : product.listing_type === 'both' ? (
                         <div className="flex gap-2">
                           <button 
                             onClick={(e) => handleAddToCart(e, product, 'sale')}
