@@ -694,7 +694,8 @@ export const getDashboardStats = async (req, res) => {
     }
 };
 
-// Renew a listing for 3 more days (authenticated - only owner can renew)
+// Renew a listing (authenticated - only owner can renew)
+// Premium users get 7 days, free users get 3 days
 export const renewListing = async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
@@ -713,12 +714,25 @@ export const renewListing = async (req, res) => {
             return res.status(403).json({ success: false, message: "You can only renew your own listings" });
         }
 
-        // Renew the listing: set expires_at to 3 days from NOW (not from current expiry)
+        // Check if user is premium
+        const user = await sql`
+            SELECT is_premium, subscription_expires_at FROM userschema WHERE id = ${userId}
+        `;
+
+        const isPremium = user.length > 0 && 
+            user[0].is_premium && 
+            user[0].subscription_expires_at && 
+            new Date(user[0].subscription_expires_at) > new Date();
+
+        // Premium users get 7 days, free users get 3 days
+        const renewalDays = isPremium ? 7 : 3;
+
+        // Renew the listing: set expires_at based on subscription type
         // Also set is_available to true when renewing
         const renewedProduct = await sql`
             UPDATE instruments
             SET 
-                expires_at = NOW() + INTERVAL '3 days',
+                expires_at = NOW() + INTERVAL '1 day' * ${renewalDays},
                 is_available = TRUE,
                 updated_at = NOW()
             WHERE id = ${id}
@@ -727,7 +741,7 @@ export const renewListing = async (req, res) => {
 
         res.status(200).json({ 
             success: true, 
-            message: "Listing renewed for 3 days",
+            message: `Listing renewed for ${renewalDays} days`,
             data: renewedProduct[0] 
         });
     } catch (error) {
@@ -1018,6 +1032,15 @@ export const createOrder = async (req, res) => {
             }
 
             const sellerId = product[0].user_id;
+
+            // Prevent users from buying their own products
+            if (sellerId === userId) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "You cannot purchase your own product" 
+                });
+            }
+
             const unitPrice = orderType === 'rental' 
                 ? parseFloat(product[0].rental_price) 
                 : parseFloat(product[0].sale_price);
