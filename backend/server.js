@@ -10,6 +10,7 @@ dotenv.config();
 import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import {sql} from "./config/db.js";
 
 // Arcjet is optional - only load if key is available
@@ -114,6 +115,7 @@ app.use(async (req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
@@ -135,6 +137,7 @@ async function initDB() {
                 lastLogin TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 isVerified BOOLEAN NOT NULL DEFAULT FALSE,
                 is_premium BOOLEAN NOT NULL DEFAULT FALSE,
+                is_admin BOOLEAN NOT NULL DEFAULT FALSE,
                 subscription_expires_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
