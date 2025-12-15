@@ -66,6 +66,7 @@ const excludedFromRateLimit = [
     '/api/auth/check-auth',
     '/api/products',        // Public product listing
     '/api/products/categories',
+    '/api/admin'
 ];
 
 // Apply arcjet rate-limit to all routes except excluded ones (only if Arcjet is configured)
