@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, User, LogOut, ChevronDown, Settings, Package, Crown, Sparkles, Menu, X } from 'lucide-react';
+import { ShoppingCart, Search, User, LogOut, ChevronDown, Settings, Package, Crown, Sparkles, Menu, X, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import axios from 'axios';
@@ -205,6 +205,17 @@ export default function Navbar() {
                     <User className="w-4 h-4" />
                     <span>Dashboard</span>
                   </Link>
+
+                  {user.is_admin && (
+                    <Link
+                      to="/admin-dashboard"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  )}
 
                   <div className="border-t border-gray-100 my-1"></div>
                   <button

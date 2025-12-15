@@ -19,6 +19,7 @@ import AccountSettingsPage from "./pages/AccountSettingsPage";
 import ListInstrumentPage from "./pages/ListInstrumentPage";
 import CartPage from "./pages/CartPage";
 import UserOrdersPage from "./pages/UserOrdersPage";
+import AdminDashboard from "./pages/AdminDashboard";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
@@ -137,6 +138,14 @@ function App() {
           element={
             <ProtectedRoute>
               <VendorDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />

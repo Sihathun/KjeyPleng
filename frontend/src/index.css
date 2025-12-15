@@ -10,3 +10,30 @@
   font-optical-sizing: auto;
   font-style: normal;
 }
+
+/* Lighter placeholder text for all inputs */
+::placeholder {
+  opacity: 0.5;
+  color: #9ca3af;
+}
+
+/* For better browser support */
+::-webkit-input-placeholder {
+  opacity: 0.5;
+  color: #9ca3af;
+}
+
+::-moz-placeholder {
+  opacity: 0.5;
+  color: #9ca3af;
+}
+
+:-ms-input-placeholder {
+  opacity: 0.5;
+  color: #9ca3af;
+}
+
+::-ms-input-placeholder {
+  opacity: 0.5;
+  color: #9ca3af;
+}
