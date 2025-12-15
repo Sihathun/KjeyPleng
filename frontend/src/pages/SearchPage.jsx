@@ -161,12 +161,13 @@ export default function SearchPage() {
           </svg>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            onClick={handleSearch}
-            className="flex-1 sm:flex-none px-8 sm:px-12 py-3 sm:py-4 text-white transition-colors bg-blue-500 rounded-full hover:bg-blue-600 text-sm sm:text-base"
+          <Link
+            to="/list-instrument"
+            className="hidden sm:flex items-center gap-2 px-6 py-3 sm:py-4 text-blue-600 border-2 border-blue-500 rounded-full hover:bg-blue-50 transition-colors text-sm sm:text-base font-medium"
           >
-            Search
-          </button>
+            <span>List Your Instrument</span>
+          </Link>
+
           {/* Mobile Filter Button */}
           <button
             onClick={() => setShowFilters(true)}
