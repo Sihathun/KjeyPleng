@@ -196,7 +196,7 @@ export const useProductStore = create((set, get) => ({
     }
   },
 
-  // Renew a listing for 3 more days
+  // Renew a listing (7 days for premium, 3 days for free users)
   renewListing: async (id) => {
     set({ isLoading: true, error: null });
     try {
@@ -207,7 +207,7 @@ export const useProductStore = create((set, get) => ({
         ),
         isLoading: false,
       }));
-      return response.data.data;
+      return response.data; // Return full response including message
     } catch (error) {
       set({
         error: error.response?.data?.message || "Error renewing listing",

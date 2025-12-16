@@ -72,8 +72,8 @@ export default function ManageProductPage() {
   const handleRenew = async (productId) => {
     try {
       setRenewingId(productId);
-      await renewListing(productId);
-      toast.success('Listing renewed for 3 more days!');
+      const response = await renewListing(productId);
+      toast.success(response.message || 'Listing renewed successfully!');
     } catch (err) {
       toast.error('Failed to renew listing');
     } finally {
@@ -298,7 +298,7 @@ export default function ManageProductPage() {
                             ? 'text-gray-300 cursor-not-allowed' 
                             : 'text-green-600 hover:bg-green-50 disabled:opacity-50'
                         }`}
-                        title={product.is_sold ? 'Cannot renew - product has been sold' : 'Renew for 3 days'}
+                        title={product.is_sold ? 'Cannot renew - product has been sold' : `Renew listing (${isPremium ? '7' : '3'} days)`}
                       >
                         <RefreshCw className={`w-4 h-4 ${renewingId === product.id ? 'animate-spin' : ''}`} />
                       </button>
