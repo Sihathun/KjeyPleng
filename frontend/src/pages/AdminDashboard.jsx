@@ -570,8 +570,8 @@ export default function AdminDashboard() {
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="text-sm font-medium text-gray-900">
                                                             {l.listing_type === 'sale' 
-                                                                ? `฿${parseFloat(l.sale_price).toLocaleString()}`
-                                                                : `฿${parseFloat(l.rental_price).toLocaleString()}/${l.rental_period}`
+                                                                ? `$${parseFloat(l.sale_price).toLocaleString()}`
+                                                                : `$${parseFloat(l.rental_price).toLocaleString()}/${l.rental_period}`
                                                             }
                                                         </div>
                                                         <div className="text-xs text-gray-500 capitalize">{l.listing_type}</div>

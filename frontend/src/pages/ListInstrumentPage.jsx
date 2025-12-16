@@ -349,9 +349,9 @@ export default function ListInstrumentPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(formData.listing_type === 'sale' || formData.listing_type === 'both') && (
                 <div>
-                  <label htmlFor="sale_price" className="block mb-2 text-sm font-medium text-gray-700">Sale Price (฿) *</label>
+                  <label htmlFor="sale_price" className="block mb-2 text-sm font-medium text-gray-700">Sale Price ($) *</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">฿</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                     <input
                       id="sale_price"
                       name="sale_price"
@@ -373,9 +373,9 @@ export default function ListInstrumentPage() {
               {(formData.listing_type === 'rent' || formData.listing_type === 'both') && (
                 <>
                   <div>
-                    <label htmlFor="rental_price" className="block mb-2 text-sm font-medium text-gray-700">Rental Price (฿) *</label>
+                    <label htmlFor="rental_price" className="block mb-2 text-sm font-medium text-gray-700">Rental Price ($) *</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">฿</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                       <input
                         id="rental_price"
                         name="rental_price"
